@@ -4,11 +4,11 @@ Pinax API
 .. image:: http://slack.pinaxproject.com/badge.svg
    :target: http://slack.pinaxproject.com/
 
-.. image:: https://img.shields.io/travis/<user_or_org_name>/pinax-api.svg
-   :target: https://travis-ci.org/<user_or_org_name>/pinax-api
+.. image:: https://img.shields.io/travis/pinax/pinax-api.svg
+   :target: https://travis-ci.org/pinax/pinax-api
 
-.. image:: https://img.shields.io/coveralls/<user_or_org_name>/pinax-api.svg
-   :target: https://coveralls.io/r/<user_or_org_name>/pinax-api
+.. image:: https://img.shields.io/coveralls/pinax/pinax-api.svg
+   :target: https://coveralls.io/r/pinax/pinax-api
 
 .. image:: https://img.shields.io/pypi/dm/pinax-api.svg
    :target:  https://pypi.python.org/pypi/pinax-api/
@@ -16,7 +16,7 @@ Pinax API
 .. image:: https://img.shields.io/pypi/v/pinax-api.svg
    :target:  https://pypi.python.org/pypi/pinax-api/
 
-.. image:: https://img.shields.io/badge/license-<license>-blue.svg
+.. image:: https://img.shields.io/badge/license-mit-blue.svg
    :target:  https://pypi.python.org/pypi/pinax-api/
 
 
