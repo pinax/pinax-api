@@ -1,0 +1,7 @@
+[run]
+source = pinax
+omit = pinax/api/tests/*,pinax/api/admin.py
+branch = 1
+
+[report]
+omit = pinax/api/tests/*,pinax/api/admin.py
