@@ -23,5 +23,5 @@ class Tests(TestCase):
                 },
                 "data": [],
             },
-            json.loads(r.content),
+            json.loads(r.content.decode("utf-8")),
         )
