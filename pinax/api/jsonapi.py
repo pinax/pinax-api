@@ -1,9 +1,12 @@
-import urllib.parse
+from __future__ import unicode_literals
 
 from collections import namedtuple
 
 from django.core.paginator import Paginator
 from django.db import models
+from django.utils.six.moves.urllib.parse import (
+    urlparse, parse_qs, urlencode, ParseResult
+)
 
 from .exceptions import ErrorResponse
 from .urls import as_absolute_url
@@ -49,27 +52,27 @@ def document_from_queryset(qs, attributes, relationships=None, request=None):
         "self": as_absolute_url(get_resource_type(qs.model), "list", request=request),
     }
     if page.has_previous():
-        u = urllib.parse.urlparse(links["self"])
-        q = urllib.parse.parse_qs(u.query)
+        u = urlparse(links["self"])
+        q = parse_qs(u.query)
         q["page[number]"] = str(page.previous_page_number())
-        links["prev"] = urllib.parse.ParseResult(
+        links["prev"] = ParseResult(
             u.scheme,
             u.netloc,
             u.path,
             u.params,
-            urllib.parse.urlencode(q),
+            urlencode(q),
             u.fragment,
         ).geturl()
     if page.has_next():
-        u = urllib.parse.urlparse(links["self"])
-        q = urllib.parse.parse_qs(u.query)
+        u = urlparse(links["self"])
+        q = parse_qs(u.query)
         q["page[number]"] = str(page.next_page_number())
-        links["next"] = urllib.parse.ParseResult(
+        links["next"] = ParseResult(
             u.scheme,
             u.netloc,
             u.path,
             u.params,
-            urllib.parse.urlencode(q),
+            urlencode(q),
             u.fragment,
         ).geturl()
     doc = {

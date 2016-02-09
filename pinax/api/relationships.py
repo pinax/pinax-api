@@ -1,5 +1,7 @@
+from __future__ import unicode_literals
 
-class Relationship:
+
+class Relationship(object):
 
     def __init__(self, collection=False, attributes=None, relationships=None):
         self.collection = collection
