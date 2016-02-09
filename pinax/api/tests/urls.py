@@ -1,10 +1,9 @@
-try:
-    from django.conf.urls import patterns, include
-except ImportError:
-    from django.conf.urls.defaults import patterns, include
+import itertools
+
+from .viewsets import UserViewSet
 
 
-urlpatterns = patterns(
-    "",
-    (r"^", include("pinax.api.urls")),
-)
+urlpatterns = []
+urlpatterns.extend(itertools.chain(
+    UserViewSet.as_urls(),
+))
