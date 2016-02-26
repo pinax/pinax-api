@@ -1,70 +1,62 @@
 from __future__ import unicode_literals
 
-import collections
 import contextlib
 import functools
-import itertools
 import json
+import traceback
 
 from django.conf import settings
 from django.conf.urls import url
-from django.core.exceptions import ValidationError
-from django.db import models
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.http import Http404
 from django.views.generic import View
 from django.views.decorators.csrf import csrf_exempt
 
-from . import jsonapi
-from .exceptions import ErrorResponse
+from .exceptions import ErrorResponse, AuthenticationFailed, SerializationError
 from .http import Response
-from .jsonapi import response_for_validation_error
+from .jsonapi import TopLevel
 
 
-ResourceURL = collections.namedtuple(
-    "ResourceURL", [
-        "base_regex",
-        "lookup_field",
-        "lookup_regex",
-        "base_name"
-    ],
-)
+def bind(parent=None, resource=None):
+    def wrapper(viewset):
+        if parent is not None:
+            viewset.parent = parent
+            viewset.url.parent = parent.url
+        if resource is not None:
+            class BoundResource(resource):
+                bound_viewset = viewset
+            viewset.resource_class = BoundResource
+        return viewset
+    return wrapper
 
 
-class ViewSet(View):
+class ResourceViewSet(View):
 
-    parent_viewset = None
-    related_name = ""
-    relationships = None
+    parent = None
+
+    @classmethod
+    def view_mapping(cls, collection):
+        if collection:
+            mapping = {
+                "get": "list",
+                "post": "create",
+            }
+        else:
+            mapping = {
+                "get": "retrieve",
+                "patch": "update",
+                "delete": "destroy",
+            }
+        return mapping
 
     @classmethod
     def as_view(cls, **initkwargs):
         collection = initkwargs.pop("collection", False)
-        view = super(ViewSet, cls).as_view(**initkwargs)
+        view = super(ResourceViewSet, cls).as_view(**initkwargs)
 
         def view(request, *args, **kwargs):
             self = cls(**initkwargs)
-            if collection:
-                if self.related_name:
-                    mapping = {
-                        "get": "list_{}_relationship".format(self.related_name),
-                        "post": "create_{}_relationship".format(self.related_name),
-                    }
-                else:
-                    mapping = {
-                        "get": "list",
-                        "post": "create",
-                    }
-            else:
-                if self.related_name:
-                    mapping = {
-                        "get": "retrieve_{}_relationship".format(self.related_name),
-                    }
-                else:
-                    mapping = {
-                        "get": "retrieve",
-                        "patch": "update",
-                        "delete": "destroy",
-                    }
+            mapping = cls.view_mapping(collection)
             for verb, method in mapping.items():
                 if hasattr(self, method):
                     setattr(self, verb, getattr(self, method))
@@ -80,6 +72,8 @@ class ViewSet(View):
 
     def dispatch(self, request, *args, **kwargs):
         try:
+            self.check_authentication()
+            self.check_permissions()
             if request.method.lower() in self.http_method_names:
                 handler = getattr(self, request.method.lower(), self.http_method_not_allowed)
             else:
@@ -93,125 +87,118 @@ class ViewSet(View):
         if isinstance(exc, ErrorResponse):
             return exc.response
         elif isinstance(exc, Http404):
-            data = {
-                "errors": [
-                    {
-                        "status": "404",
-                        "detail": exc.args[0],
-                    },
-                ],
-            }
-            return Response(data, status=404)
+            return self.render_error(exc.args[0], status=404)
         else:
-            raise
+            if settings.DEBUG:
+                traceback.print_exc()
+                return self.render_error(
+                    traceback.format_exc().splitlines()[-1],
+                    status=500
+                )
+            else:
+                return self.render_error("unknown server error", status=500)
 
-    def get_data(self, request):
+    def check_authentication(self):
+        for backend in getattr(self, "middleware", {}).get("authentication", []):
+            try:
+                user = backend.authenticate(self.request)
+            except AuthenticationFailed as exc:
+                raise ErrorResponse(**self.error_response_kwargs(str(exc), status=401))
+            if user:
+                break
+        else:
+            raise ErrorResponse(**self.error_response_kwargs("Authentication Required.", status=401))
+        self.request.user = user
+
+    def check_permissions(self):
+        for perm in getattr(self, "middleware", {}).get("permissions", []):
+            res = perm(self.request)
+            if isinstance(res, tuple):
+                ok, status, msg = res
+            else:
+                ok, status = res, 403, "Permission Denied."
+            if not ok:
+                raise ErrorResponse(**self.error_response_kwargs(msg, status=status))
+
+    def get_object_or_404(self, qs, **kwargs):
+        try:
+            return qs.get(**kwargs)
+        except ObjectDoesNotExist:
+            raise Http404("{} does not exist.".format(qs.model._meta.verbose_name.capitalize()))
+
+    def parse_data(self):
         # @@@ this method is not the most ideal implementation generally, but
         # until a better design comes along, we roll with it!
         try:
-            return json.loads(request.body.decode(settings.DEFAULT_CHARSET))
+            return json.loads(self.request.body.decode(settings.DEFAULT_CHARSET))
         except json.JSONDecodeError as e:
-            data = {
-                "errors": [{
-                    "status": "400",
-                    "title": "invalid JSON",
-                    "detail": str(e),
-                }],
-            }
-            raise ErrorResponse(data, status=400)
+            raise ErrorResponse(**self.error_kwargs(str(e), title="Invalid JSON", status=400))
 
     @contextlib.contextmanager
-    def validate(self, request, model, obj=None):
-        data = self.get_data(request)
-        if obj is None:
-            obj = model()
-        pairs = itertools.chain(
-            data["data"]["attributes"].items(),
-            data["data"]["relationships"].items(),
-        )
-        for k, v in pairs:
-            f = model._meta.get_field(k)
-            if isinstance(f, models.ForeignKey):
-                setattr(obj, f.attname, v["data"]["id"])
-            else:
-                setattr(obj, f.attname, v)
+    def validate(self, resource_class, obj=None):
+        data = self.parse_data()
+        if "data" not in data:
+            raise ErrorResponse(**self.error_kwargs('Missing "data" key in payload.', status=400))
+        if "attributes" not in data["data"]:
+            raise ErrorResponse(**self.error_kwargs('Missing "attributes" key in data.', status=400))
         try:
-            yield obj
+            yield resource_class.populate(data["data"], obj=obj)
         except ValidationError as exc:
-            raise response_for_validation_error(exc, model=model)
+            raise ErrorResponse(
+                TopLevel.from_validation_error(self.request, exc, resource_class).serializable(request=self.request),
+                status=400,
+            )
 
-    def render(self, obj, **kwargs):
-        if isinstance(obj, models.QuerySet):
-            return Response(jsonapi.document_from_queryset(
-                obj,
-                request=self.request,
-                **kwargs
-            ))
-        return Response(jsonapi.document_from_obj(
-            obj,
-            request=self.request,
-            **kwargs
-        ))
+    def render(self, resource, meta=None):
+        top_level = TopLevel(self.request, data=resource, meta=meta)
+        try:
+            payload = top_level.serializable(request=self.request)
+        except SerializationError as exc:
+            return self.render_error(str(exc), status=400)
+        else:
+            return Response(payload, status=200)
 
-    def render_collection_relationship(self, parent, qs, **kwargs):
-        return Response(jsonapi.document_from_collection_relationship(
-            parent, qs, self.related_name,
-            request=self.request, **kwargs
-        ))
+    def render_create(self, resource, meta=None):
+        top_level = TopLevel(self.request, data=resource, meta=meta)
+        try:
+            payload = top_level.serializable(request=self.request)
+        except SerializationError as exc:
+            return self.render_error(str(exc), status=400)
+        else:
+            res = Response(payload, status=201)
+            res["Location"] = self.request.build_absolute_uri(resource.get_self_link())
+            return res
 
-    def render_obj_relationship(self, parent, obj, **kwargs):
-        return Response(jsonapi.document_from_obj_relationship(
-            parent, obj, self.related_name,
-            request=self.request, **kwargs
-        ))
+    def render_delete(self):
+        pass
 
+    def error_response_kwargs(self, message, title=None, status=400, extra=None):
+        if extra is None:
+            extra = {}
+        err = dict(extra)
+        err.update({
+            "status": str(status),
+            "detail": message,
+        })
+        if title is not None:
+            err["title"] = title
+        return {"data": TopLevel(self.request, errors=[err]).serializable(request=self.request), "status": status}
 
-class ResourceViewSet(ViewSet):
+    def render_error(self, *args, **kwargs):
+        return Response(**self.error_response_kwargs(*args, **kwargs))
 
     @classmethod
-    def as_urls(cls, **kwargs):
-        base_regex = r"^{}".format(cls.url.base_regex)
+    def as_urls(cls):
         urls = [
             url(
-                r"{}/$".format(base_regex),
+                r"^{}$".format(cls.url.collection_regex()),
                 cls.as_view(collection=True),
                 name="{}-list".format(cls.url.base_name)
             ),
             url(
-                r"{}/(?P<{}>{})/$".format(
-                    base_regex,
-                    cls.url.lookup_field,
-                    cls.url.lookup_regex,
-                ),
+                r"^{}$".format(cls.url.detail_regex()),
                 cls.as_view(),
                 name="{}-detail".format(cls.url.base_name)
             )
         ]
-        relationships = {} if cls.relationships is None else cls.relationships
-        for related_name, relationship in relationships.items():
-            view_kwargs = {
-                "parent_viewset": cls,
-                "related_name": related_name,
-            }
-            url_name = [cls.url.base_name, related_name, "relationship"]
-            if relationship.collection:
-                url_name.append("list")
-            else:
-                url_name.append("detail")
-            urls.extend([
-                url(
-                    r"{}/(?P<{}>{})/relationships/{}/$".format(
-                        base_regex,
-                        cls.url.lookup_field,
-                        cls.url.lookup_regex,
-                        related_name,
-                    ),
-                    cls.as_view(**dict(
-                        view_kwargs,
-                        collection=relationship.collection,
-                        related_name=related_name,
-                    )),
-                    name="-".join(url_name),
-                )
-            ])
         return urls

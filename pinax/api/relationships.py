@@ -1,14 +1,14 @@
 from __future__ import unicode_literals
 
+from .registry import registry
+
 
 class Relationship(object):
 
-    def __init__(self, collection=False, attributes=None, relationships=None):
+    def __init__(self, api_type, collection=False):
+        self.api_type = api_type
         self.collection = collection
-        self.attributes = attributes
-        self.relationships = relationships
 
-    def __call__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-        return self
+    @property
+    def resource_class(self):
+        return registry.get(self.api_type)
