@@ -9,6 +9,5 @@ class Relationship(object):
         self.api_type = api_type
         self.collection = collection
 
-    @property
     def resource_class(self):
         return registry.get(self.api_type)

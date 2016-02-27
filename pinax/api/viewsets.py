@@ -14,23 +14,10 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .exceptions import ErrorResponse, AuthenticationFailed, SerializationError
 from .http import Response
-from .jsonapi import TopLevel
+from .jsonapi import TopLevel, Included
 
 
-def bind(parent=None, resource=None):
-    def wrapper(viewset):
-        if parent is not None:
-            viewset.parent = parent
-            viewset.url.parent = parent.url
-        if resource is not None:
-            class BoundResource(resource):
-                bound_viewset = viewset
-            viewset.resource_class = BoundResource
-        return viewset
-    return wrapper
-
-
-class ResourceViewSet(View):
+class ResourceEndpointSet(View):
 
     parent = None
 
@@ -52,7 +39,7 @@ class ResourceViewSet(View):
     @classmethod
     def as_view(cls, **initkwargs):
         collection = initkwargs.pop("collection", False)
-        view = super(ResourceViewSet, cls).as_view(**initkwargs)
+        view = super(ResourceEndpointSet, cls).as_view(**initkwargs)
 
         def view(request, *args, **kwargs):
             self = cls(**initkwargs)
@@ -73,6 +60,7 @@ class ResourceViewSet(View):
     def dispatch(self, request, *args, **kwargs):
         try:
             self.check_authentication()
+            self.prepare()
             self.check_permissions()
             if request.method.lower() in self.http_method_names:
                 handler = getattr(self, request.method.lower(), self.http_method_not_allowed)
@@ -98,6 +86,9 @@ class ResourceViewSet(View):
             else:
                 return self.render_error("unknown server error", status=500)
 
+    def prepare(self):
+        pass
+
     def check_authentication(self):
         for backend in getattr(self, "middleware", {}).get("authentication", []):
             try:
@@ -112,11 +103,13 @@ class ResourceViewSet(View):
 
     def check_permissions(self):
         for perm in getattr(self, "middleware", {}).get("permissions", []):
-            res = perm(self.request)
+            res = perm(self.request, view=self)
+            if res is None:
+                continue
             if isinstance(res, tuple):
                 ok, status, msg = res
             else:
-                ok, status = res, 403, "Permission Denied."
+                ok, status, msg = res, 403, "Permission Denied."
             if not ok:
                 raise ErrorResponse(**self.error_response_kwargs(msg, status=status))
 
@@ -145,28 +138,36 @@ class ResourceViewSet(View):
             yield resource_class.populate(data["data"], obj=obj)
         except ValidationError as exc:
             raise ErrorResponse(
-                TopLevel.from_validation_error(self.request, exc, resource_class).serializable(request=self.request),
+                TopLevel.from_validation_error(exc, resource_class).serializable(),
                 status=400,
             )
 
+    def create_top_level(self, resource, meta=None):
+        kwargs = {
+            "data": resource,
+            "meta": meta,
+            "links": True,
+        }
+        if "include" in self.request.GET:
+            kwargs["included"] = Included(self.request.GET["include"].split(","))
+        return TopLevel(**kwargs)
+
     def render(self, resource, meta=None):
-        top_level = TopLevel(self.request, data=resource, meta=meta)
         try:
-            payload = top_level.serializable(request=self.request)
+            payload = self.create_top_level(resource, meta=meta).serializable(request=self.request)
         except SerializationError as exc:
             return self.render_error(str(exc), status=400)
         else:
             return Response(payload, status=200)
 
     def render_create(self, resource, meta=None):
-        top_level = TopLevel(self.request, data=resource, meta=meta)
         try:
-            payload = top_level.serializable(request=self.request)
+            payload = self.create_top_level(resource, meta=meta).serializable(request=self.request)
         except SerializationError as exc:
             return self.render_error(str(exc), status=400)
         else:
             res = Response(payload, status=201)
-            res["Location"] = self.request.build_absolute_uri(resource.get_self_link())
+            res["Location"] = resource.get_self_link(request=self.request)
             return res
 
     def render_delete(self):
@@ -182,7 +183,10 @@ class ResourceViewSet(View):
         })
         if title is not None:
             err["title"] = title
-        return {"data": TopLevel(self.request, errors=[err]).serializable(request=self.request), "status": status}
+        return {
+            "data": TopLevel(errors=[err]).serializable(),
+            "status": status,
+        }
 
     def render_error(self, *args, **kwargs):
         return Response(**self.error_response_kwargs(*args, **kwargs))

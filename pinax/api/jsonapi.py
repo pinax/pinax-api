@@ -1,8 +1,6 @@
 from __future__ import unicode_literals
 
 from collections import abc
-from functools import partial
-from operator import attrgetter
 
 from .resource import Resource
 
@@ -17,7 +15,7 @@ class Included(set):
 class TopLevel:
 
     @classmethod
-    def from_validation_error(cls, request, exc, resource_class):
+    def from_validation_error(cls, exc, resource_class):
         errs = []
         for field, errors in exc:
             for err in errors:
@@ -35,26 +33,23 @@ class TopLevel:
                     },
                 }
                 errs.append(err)
-        return cls(request, errors=errs)
+        return cls(errors=errs)
 
-    def __init__(self, request, data=None, errors=None, meta=None):
-        self.request = request
+    def __init__(self, data=None, errors=None, links=False, included=None, meta=None):
         self.data = data
         self.errors = errors
-        if "include" in request.GET:
-            self.included = Included(request.GET["include"].split(","))
-        else:
-            self.included = None
+        self.links = links
+        self.included = included
         self.meta = meta
 
     def get_serializable_data(self, request=None):
         if isinstance(self.data, abc.Iterable):
             ret = []
             for x in self.data:
-                ret.append(x.serializable(included=self.included, request=request))
+                ret.append(x.serializable(links=self.links, included=self.included, request=request))
             return ret
         elif isinstance(self.data, Resource):
-            return self.data.serializable(included=self.included, request=request)
+            return self.data.serializable(links=self.links, included=self.included, request=request)
         else:
             return self.data
 
@@ -65,11 +60,7 @@ class TopLevel:
         if self.errors is not None:
             res.update(dict(errors=self.errors))
         if self.included:
-            res.update(dict(
-                included=list(map(
-                    partial(attrgetter("serializable"), request=request), self.included
-                ))
-            ))
+            res.update(dict(included=[r.serializable(links=self.links, request=request) for r in self.included]))
         if self.meta is not None:
             res.update(dict(meta=self.meta))
         return res

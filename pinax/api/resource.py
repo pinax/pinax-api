@@ -114,33 +114,23 @@ class Resource(object):
         }
 
     def get_self_link(self, request=None):
+        assert hasattr(self, "viewset"), "a bound resource is required to create self link."
         kwargs = {}
-        obj = None
-
-        def resolve(r=None):
-            nonlocal obj
-            if r is None:
-                r = self.__class__
-            if r.bound_viewset is None:
-                raise RuntimeError("cannot generate link without being bound to a viewset")
-            viewset = r.bound_viewset
-            if viewset.parent:
-                resolve(viewset.parent)
-            if obj is None:
+        viewset = self.viewset
+        child_obj = None  # moving object as we traverse the ancestors
+        while viewset is not None:
+            if child_obj is None:
                 obj = self.obj
             else:
-                obj = getattr(obj, viewset.url.lookup["field"])
-            kwargs[viewset.url.lookup["field"]] = str(r(obj).id)
-        resolve()
-        url = reverse(
-            "{}-detail".format(self.bound_viewset.url.base_name),
-            kwargs=kwargs
-        )
+                obj = getattr(child_obj, viewset.url.lookup["field"])
+            kwargs[viewset.url.lookup["field"]] = viewset.resource_class(obj).id
+            viewset, child_obj = viewset.parent, obj
+        url = reverse("{}-detail".format(self.viewset.url.base_name), kwargs=kwargs)
         if request is not None:
             return request.build_absolute_uri(url)
         return url
 
-    def serializable(self, included=None, request=None):
+    def serializable(self, links=False, included=None, request=None):
         attributes = {}
         for attr in self.attributes:
             attributes[attr] = getattr(self.obj, attr)
@@ -151,11 +141,11 @@ class Resource(object):
                 qs = getattr(self.obj, name).all()
                 data = rel_obj.setdefault("data", [])
                 for v in qs:
-                    data.append(rel.resource_class(v).get_identifier())
+                    data.append(rel.resource_class()(v).get_identifier())
             else:
                 v = getattr(self.obj, name)
                 if v is not None:
-                    rel_obj["data"] = rel.resource_class(v).get_identifier()
+                    rel_obj["data"] = rel.resource_class()(v).get_identifier()
                 else:
                     rel_obj["data"] = None
         if included is not None:
@@ -164,7 +154,7 @@ class Resource(object):
         res = {
             "attributes": attributes,
         }
-        if self.bound_viewset:
+        if links:
             res.update({"links": {"self": self.get_self_link(request=request)}})
         res.update(self.get_identifier())
         if relationships:
@@ -176,10 +166,12 @@ def resolve_include(resource, path, included):
     try:
         head, rest = path.split(".", 1)
     except ValueError:
-        head, rest = path, []
+        head, rest = path, ""
     if head not in resource.relationships:
         raise SerializationError("'{}' is not a valid relationship to include".format(head))
     rel = resource.relationships[head]
     for obj in getattr(resource.obj, head).all():
-        resolve_include(resource, rest, included)
-        included.add(rel.resource_class(obj))
+        r = rel.resource_class()(obj)
+        if rest:
+            resolve_include(r, rest, included)
+        included.add(r)
