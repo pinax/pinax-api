@@ -10,6 +10,13 @@ from django.db.models.query import ModelIterable
 from .exceptions import SerializationError
 
 
+class Attribute(object):
+
+    def __init__(self, name, obj_attr=None):
+        self.name = name
+        self.obj_attr = name if obj_attr is None else obj_attr
+
+
 class ResourceIterable(ModelIterable):
 
     def __init__(self, resource_class, queryset):
@@ -133,7 +140,9 @@ class Resource(object):
     def serializable(self, links=False, included=None, request=None):
         attributes = {}
         for attr in self.attributes:
-            attributes[attr] = getattr(self.obj, attr)
+            if isinstance(attr, str):
+                attr = Attribute(name=attr)
+            attributes[attr.name] = getattr(self.obj, attr.obj_attr)
         relationships = {}
         for name, rel in self.relationships.items():
             rel_obj = relationships.setdefault(name, {})
