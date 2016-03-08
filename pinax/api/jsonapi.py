@@ -63,4 +63,6 @@ class TopLevel:
             res.update(dict(included=[r.serializable(links=self.links, request=request) for r in self.included]))
         if self.meta is not None:
             res.update(dict(meta=self.meta))
+        if self.links:
+            res.update(dict(links={"self": request.build_absolute_uri(request.path)}))
         return res
