@@ -17,33 +17,16 @@ from .http import Response
 from .jsonapi import TopLevel, Included
 
 
-class ResourceEndpointSet(View):
-
-    parent = None
-
-    @classmethod
-    def view_mapping(cls, collection):
-        if collection:
-            mapping = {
-                "get": "list",
-                "post": "create",
-            }
-        else:
-            mapping = {
-                "get": "retrieve",
-                "patch": "update",
-                "delete": "destroy",
-            }
-        return mapping
+class EndpointSet(View):
 
     @classmethod
     def as_view(cls, **initkwargs):
-        collection = initkwargs.pop("collection", False)
-        view = super(ResourceEndpointSet, cls).as_view(**initkwargs)
+        view_mapping_kwargs = initkwargs.pop("view_mapping_kwargs", {})
+        view = super(EndpointSet, cls).as_view(**initkwargs)
 
         def view(request, *args, **kwargs):
             self = cls(**initkwargs)
-            mapping = cls.view_mapping(collection)
+            mapping = cls.view_mapping(**view_mapping_kwargs)
             for verb, method in mapping.items():
                 if hasattr(self, method):
                     setattr(self, verb, getattr(self, method))
@@ -113,12 +96,6 @@ class ResourceEndpointSet(View):
             if not ok:
                 raise ErrorResponse(**self.error_response_kwargs(msg, status=status))
 
-    def get_object_or_404(self, qs, **kwargs):
-        try:
-            return qs.get(**kwargs)
-        except ObjectDoesNotExist:
-            raise Http404("{} does not exist.".format(qs.model._meta.verbose_name.capitalize()))
-
     def parse_data(self):
         # @@@ this method is not the most ideal implementation generally, but
         # until a better design comes along, we roll with it!
@@ -141,16 +118,6 @@ class ResourceEndpointSet(View):
                 TopLevel.from_validation_error(exc, resource_class).serializable(),
                 status=400,
             )
-
-    def create_top_level(self, resource, meta=None):
-        kwargs = {
-            "data": resource,
-            "meta": meta,
-            "links": True,
-        }
-        if "include" in self.request.GET:
-            kwargs["included"] = Included(self.request.GET["include"].split(","))
-        return TopLevel(**kwargs)
 
     def render(self, resource, meta=None):
         try:
@@ -191,18 +158,82 @@ class ResourceEndpointSet(View):
     def render_error(self, *args, **kwargs):
         return Response(**self.error_response_kwargs(*args, **kwargs))
 
+
+class ResourceEndpointSet(EndpointSet):
+
+    parent = None
+
+    @classmethod
+    def view_mapping(cls, collection):
+        if collection:
+            mapping = {
+                "get": "list",
+                "post": "create",
+            }
+        else:
+            mapping = {
+                "get": "retrieve",
+                "patch": "update",
+                "delete": "destroy",
+            }
+        return mapping
+
+    def get_object_or_404(self, qs, **kwargs):
+        try:
+            return qs.get(**kwargs)
+        except ObjectDoesNotExist:
+            raise Http404("{} does not exist.".format(qs.model._meta.verbose_name.capitalize()))
+
+    def create_top_level(self, resource, meta=None):
+        kwargs = {
+            "data": resource,
+            "meta": meta,
+            "links": True,
+        }
+        if "include" in self.request.GET:
+            kwargs["included"] = Included(self.request.GET["include"].split(","))
+        return TopLevel(**kwargs)
+
     @classmethod
     def as_urls(cls):
         urls = [
             url(
                 r"^{}$".format(cls.url.collection_regex()),
-                cls.as_view(collection=True),
+                cls.as_view(view_mapping_kwargs=dict(collection=True)),
                 name="{}-list".format(cls.url.base_name)
             ),
             url(
                 r"^{}$".format(cls.url.detail_regex()),
-                cls.as_view(),
+                cls.as_view(view_mapping_kwargs=dict(collection=False)),
                 name="{}-detail".format(cls.url.base_name)
             )
+        ]
+        for related_name, eps in cls.relationships.items():
+            urls.extend(eps.as_urls(cls.url, related_name))
+        return urls
+
+
+class RelationshipEndpointSet(EndpointSet):
+
+    @classmethod
+    def view_mapping(cls):
+        return {
+            "get": "retrieve",
+            "post": "create",
+            "patch": "update",
+            "delete": "destroy",
+        }
+
+    @classmethod
+    def as_urls(cls, base_url, related_name):
+        urls = [
+            url(
+                r"{}/relationships/{}$".format(
+                    base_url.detail_regex(),
+                    related_name,
+                ),
+                cls.as_view(),
+                name="-".join([base_url.base_name, related_name, "relationship", "detail"])
+            ),
         ]
         return urls

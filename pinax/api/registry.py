@@ -24,5 +24,6 @@ def bind(parent=None, resource=None):
             viewset.resource_class = BoundResource
             # override registry with bound resource (typically what we want)
             registry[resource.api_type] = BoundResource
+        viewset.relationships = getattr(viewset, "relationships", {})
         return viewset
     return wrapper

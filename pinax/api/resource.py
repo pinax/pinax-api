@@ -120,8 +120,8 @@ class Resource(object):
             "id": str(self.id),
         }
 
-    def get_self_link(self, request=None):
-        assert hasattr(self, "viewset"), "a bound resource is required to create self link."
+    def resolve_url_kwargs(self):
+        assert hasattr(self, "viewset"), "resolve_url_kwargs requires a bound resource."
         kwargs = {}
         viewset = self.viewset
         child_obj = None  # moving object as we traverse the ancestors
@@ -132,7 +132,24 @@ class Resource(object):
                 obj = getattr(child_obj, viewset.url.lookup["field"])
             kwargs[viewset.url.lookup["field"]] = viewset.resource_class(obj).id
             viewset, child_obj = viewset.parent, obj
+        return kwargs
+
+    def get_self_link(self, request=None):
+        kwargs = self.resolve_url_kwargs()
         url = reverse("{}-detail".format(self.viewset.url.base_name), kwargs=kwargs)
+        if request is not None:
+            return request.build_absolute_uri(url)
+        return url
+
+    def get_self_relationship_link(self, related_name, request=None):
+        kwargs = self.resolve_url_kwargs()
+        url = reverse(
+            "{}-{}-relationship-detail".format(
+                self.viewset.url.base_name,
+                related_name,
+            ),
+            kwargs=kwargs
+        )
         if request is not None:
             return request.build_absolute_uri(url)
         return url
@@ -145,7 +162,11 @@ class Resource(object):
             attributes[attr.name] = getattr(self.obj, attr.obj_attr)
         relationships = {}
         for name, rel in self.relationships.items():
-            rel_obj = relationships.setdefault(name, {})
+            rel_obj = relationships.setdefault(name, {
+                "links": {
+                    "self": self.get_self_relationship_link(name, request=request),
+                },
+            })
             if rel.collection:
                 qs = getattr(self.obj, name).all()
                 data = rel_obj.setdefault("data", [])
