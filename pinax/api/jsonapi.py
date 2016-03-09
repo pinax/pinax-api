@@ -35,21 +35,32 @@ class TopLevel:
                 errs.append(err)
         return cls(errors=errs)
 
-    def __init__(self, data=None, errors=None, links=False, included=None, meta=None):
+    def __init__(self, data=None, errors=None, links=False, included=None, meta=None, linkage=False):
         self.data = data
         self.errors = errors
         self.links = links
         self.included = included
         self.meta = meta
+        self.linkage = linkage
 
     def get_serializable_data(self, request=None):
         if isinstance(self.data, abc.Iterable):
             ret = []
             for x in self.data:
-                ret.append(x.serializable(links=self.links, included=self.included, request=request))
+                ret.append(x.serializable(
+                    links=self.links,
+                    linkage=self.linkage,
+                    included=self.included,
+                    request=request,
+                ))
             return ret
         elif isinstance(self.data, Resource):
-            return self.data.serializable(links=self.links, included=self.included, request=request)
+            return self.data.serializable(
+                links=self.links,
+                linkage=self.linkage,
+                included=self.included,
+                request=request,
+            )
         else:
             return self.data
 

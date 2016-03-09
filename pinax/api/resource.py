@@ -121,7 +121,7 @@ class Resource(object):
         }
 
     def resolve_url_kwargs(self):
-        assert hasattr(self, "viewset"), "resolve_url_kwargs requires a bound resource."
+        assert hasattr(self, "viewset"), "resolve_url_kwargs requires a bound resource (got {}).".format(self)
         kwargs = {}
         viewset = self.viewset
         child_obj = None  # moving object as we traverse the ancestors
@@ -154,7 +154,11 @@ class Resource(object):
             return request.build_absolute_uri(url)
         return url
 
-    def serializable(self, links=False, included=None, request=None):
+    def serializable(self, links=False, included=None, linkage=False, request=None):
+        data = {}
+        data.update(self.get_identifier())
+        if linkage:
+            return data
         attributes = {}
         for attr in self.attributes:
             if isinstance(attr, str):
@@ -169,9 +173,9 @@ class Resource(object):
             })
             if rel.collection:
                 qs = getattr(self.obj, name).all()
-                data = rel_obj.setdefault("data", [])
+                rel_data = rel_obj.setdefault("data", [])
                 for v in qs:
-                    data.append(rel.resource_class()(v).get_identifier())
+                    rel_data.append(rel.resource_class()(v).get_identifier())
             else:
                 v = getattr(self.obj, name)
                 if v is not None:
@@ -181,15 +185,12 @@ class Resource(object):
         if included is not None:
             for path in included.paths:
                 resolve_include(self, path, included)
-        res = {
-            "attributes": attributes,
-        }
+        data["attributes"] = attributes
         if links:
-            res.update({"links": {"self": self.get_self_link(request=request)}})
-        res.update(self.get_identifier())
+            data["links"] = {"self": self.get_self_link(request=request)}
         if relationships:
-            res["relationships"] = relationships
-        return res
+            data["relationships"] = relationships
+        return data
 
 
 def resolve_include(resource, path, included):

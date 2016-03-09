@@ -60,7 +60,7 @@ class EndpointSet(View):
         elif isinstance(exc, Http404):
             return self.render_error(exc.args[0], status=404)
         else:
-            if settings.DEBUG:
+            if not settings.DEBUG:
                 traceback.print_exc()
                 return self.render_error(
                     traceback.format_exc().splitlines()[-1],
@@ -158,6 +158,23 @@ class EndpointSet(View):
     def render_error(self, *args, **kwargs):
         return Response(**self.error_response_kwargs(*args, **kwargs))
 
+    def get_object_or_404(self, qs, **kwargs):
+        try:
+            return qs.get(**kwargs)
+        except ObjectDoesNotExist:
+            raise Http404("{} does not exist.".format(qs.model._meta.verbose_name.capitalize()))
+
+    def create_top_level(self, resource, linkage=False, meta=None):
+        kwargs = {
+            "data": resource,
+            "meta": meta,
+            "links": True,
+            "linkage": linkage,
+        }
+        if "include" in self.request.GET:
+            kwargs["included"] = Included(self.request.GET["include"].split(","))
+        return TopLevel(**kwargs)
+
 
 class ResourceEndpointSet(EndpointSet):
 
@@ -177,22 +194,6 @@ class ResourceEndpointSet(EndpointSet):
                 "delete": "destroy",
             }
         return mapping
-
-    def get_object_or_404(self, qs, **kwargs):
-        try:
-            return qs.get(**kwargs)
-        except ObjectDoesNotExist:
-            raise Http404("{} does not exist.".format(qs.model._meta.verbose_name.capitalize()))
-
-    def create_top_level(self, resource, meta=None):
-        kwargs = {
-            "data": resource,
-            "meta": meta,
-            "links": True,
-        }
-        if "include" in self.request.GET:
-            kwargs["included"] = Included(self.request.GET["include"].split(","))
-        return TopLevel(**kwargs)
 
     @classmethod
     def as_urls(cls):
@@ -237,3 +238,7 @@ class RelationshipEndpointSet(EndpointSet):
             ),
         ]
         return urls
+
+    def create_top_level(self, *args, **kwargs):
+        kwargs["linkage"] = True
+        return super(RelationshipEndpointSet, self).create_top_level(*args, **kwargs)
