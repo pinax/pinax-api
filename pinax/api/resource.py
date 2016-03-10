@@ -60,7 +60,7 @@ class Resource(object):
                             k, v["data"]["id"]
                         )
                     })
-                setattr(obj, f.attname, o)
+                setattr(obj, f.name, o)
             else:
                 # A collection can be:
                 #  * ManyToManyField
