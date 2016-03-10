@@ -32,6 +32,9 @@ class ResourceIterable(ModelIterable):
             yield self.resource_class(obj)
 
 
+empty = object()
+
+
 class Resource(object):
 
     api_type = ""
@@ -43,60 +46,23 @@ class Resource(object):
     def from_queryset(cls, qs):
         return qs._clone(_iterable_class=partial(ResourceIterable, cls))
 
-    @classmethod
-    def populate(cls, data, obj=None):
-        if obj is None:
-            obj = cls.model()
-        for k, v in data["attributes"].items():
-            f = cls.model._meta.get_field(k)
-            setattr(obj, f.attname, v)
-        r = cls(obj)
-        for k, v in data.get("relationships", {}).items():
-            rel = cls.relationships[k]
-            attr = rel.attr if rel.attr is not None else k
-            if not rel.collection:
-                f = cls.model._meta.get_field(attr)
-                try:
-                    o = f.rel.to._default_manager.get(pk=v["data"]["id"])
-                except ObjectDoesNotExist:
-                    raise ValidationError({
-                        k: 'Relationship "{}" object ID {} does not exist'.format(
-                            k, v["data"]["id"]
-                        )
-                    })
-                setattr(obj, f.name, o)
-            else:
-                # A collection can be:
-                #  * ManyToManyField
-                #  * Reverse relation
-                given = set(map(itemgetter("id"), v["data"]))
-                f = cls.model._meta.get_field(attr)
-                if f in cls.model._meta.related_objects:
-                    related = f.field.model
-                    accessor_name = f.get_accessor_name()
-                else:
-                    related = f.rel.model
-                    accessor_name = f.name
-                qs = related._default_manager.filter(pk__in=given)
-                found = set(map(attrgetter("id"), qs))
-                missing = given.difference(found)
-                if missing:
-                    raise ValidationError({
-                        k: 'Relationship "{}" object IDs {} do not exist'.format(
-                            k,
-                            ", ".join(sorted(missing))
-                        )
-                    })
-
-                def save(self, parent=None):
-                    if parent is None:
-                        parent = obj
-                    getattr(parent, accessor_name).add(*qs)
-                obj.save_relationships = save
-        return r
-
-    def __init__(self, obj):
+    def __init__(self, obj=None):
         self.obj = obj
+
+    def populate(self, data, obj=None):
+        if obj is None:
+            obj = self.model()
+        self.obj = obj
+        for attr in self.attributes:
+            if isinstance(attr, str):
+                attr = Attribute(name=attr)
+            value = data["attributes"].get(attr.name, empty)
+            if value is not empty:
+                self.set_attr(attr, value)
+        for related_name, rel in self.relationships.items():
+            value = data.get("relationships", {}).get(related_name, empty)
+            if value is not empty:
+                self.set_relationship(related_name, rel, value)
 
     def create(self, **kwargs):
         self.obj.full_clean()
@@ -158,22 +124,67 @@ class Resource(object):
             return request.build_absolute_uri(url)
         return url
 
-    def resolve_attr(self, attr):
+    def get_attr(self, attr):
         if hasattr(self, attr.obj_attr):
             value = getattr(self, attr.obj_attr)
         else:
             value = getattr(self.obj, attr.obj_attr)
         return resolve_value(value)
 
-    def resolve_relationship(self, related_name, rel):
+    def get_relationship(self, related_name, rel):
         return getattr(self.obj, related_name)
+
+    def set_attr(self, attr, value):
+        setattr(self.obj, attr.obj_attr, value)
+
+    def set_relationship(self, related_name, rel, value):
+        attr = rel.attr if rel.attr is not None else related_name
+        if not rel.collection:
+            f = self.model._meta.get_field(attr)
+            try:
+                o = f.rel.to._default_manager.get(pk=value["data"]["id"])
+            except ObjectDoesNotExist:
+                raise ValidationError({
+                    related_name: 'Relationship "{}" object ID {} does not exist'.format(
+                        related_name, value["data"]["id"]
+                    )
+                })
+            setattr(self.obj, related_name, o)
+        else:
+            # A collection can be:
+            #  * ManyToManyField
+            #  * Reverse relation
+            given = set(map(itemgetter("id"), value["data"]))
+            f = self.model._meta.get_field(attr)
+            if f in self.model._meta.related_objects:
+                related = f.field.model
+                accessor_name = f.get_accessor_name()
+            else:
+                related = f.rel.model
+                accessor_name = f.name
+            qs = related._default_manager.filter(pk__in=given)
+            found = set(map(attrgetter("id"), qs))
+            missing = given.difference(found)
+            if missing:
+                raise ValidationError({
+                    related_name: 'Relationship "{}" object IDs {} do not exist'.format(
+                        related_name,
+                        ", ".join(sorted(missing))
+                    )
+                })
+
+            def save(self, parent=None):
+                if parent is None:
+                    parent = self.obj
+                getattr(parent, accessor_name).add(*qs)
+            self.obj.save_relationships = save
 
     def serialize(self, links=False, request=None):
         attributes = {}
         for attr in self.attributes:
             if isinstance(attr, str):
                 attr = Attribute(name=attr)
-            attributes[attr.name] = self.resolve_attr(attr)
+            attributes[attr.name] = self.get_attr(attr)
         relationships = {}
         for name, rel in self.relationships.items():
             rel_obj = relationships.setdefault(name, {
@@ -182,12 +193,12 @@ class Resource(object):
                 },
             })
             if rel.collection:
-                qs = self.resolve_relationship(name, rel).all()
+                qs = self.get_relationship(name, rel).all()
                 rel_data = rel_obj.setdefault("data", [])
                 for v in qs:
                     rel_data.append(rel.resource_class()(v).get_identifier())
             else:
-                v = self.resolve_relationship(name, rel)
+                v = self.get_relationship(name, rel)
                 if v is not None:
                     rel_obj["data"] = rel.resource_class()(v).get_identifier()
                 else:

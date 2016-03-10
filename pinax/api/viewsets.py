@@ -111,8 +111,10 @@ class EndpointSet(View):
             raise ErrorResponse(**self.error_kwargs('Missing "data" key in payload.', status=400))
         if "attributes" not in data["data"]:
             raise ErrorResponse(**self.error_kwargs('Missing "attributes" key in data.', status=400))
+        resource = resource_class()
         try:
-            yield resource_class.populate(data["data"], obj=obj)
+            resource.populate(data["data"], obj=obj)
+            yield resource
         except ValidationError as exc:
             raise ErrorResponse(
                 TopLevel.from_validation_error(exc, resource_class).serializable(),
