@@ -158,12 +158,18 @@ class Resource(object):
             return request.build_absolute_uri(url)
         return url
 
+    def resolve_attr(self, attr):
+        return resolve_value(getattr(self.obj, attr.obj_attr))
+
+    def resolve_relationship(self, related_name, rel):
+        return getattr(self.obj, related_name)
+
     def serialize(self, links=False, request=None):
         attributes = {}
         for attr in self.attributes:
             if isinstance(attr, str):
                 attr = Attribute(name=attr)
-            attributes[attr.name] = resolve_value(getattr(self.obj, attr.obj_attr))
+            attributes[attr.name] = self.resolve_attr(attr)
         relationships = {}
         for name, rel in self.relationships.items():
             rel_obj = relationships.setdefault(name, {
@@ -172,12 +178,12 @@ class Resource(object):
                 },
             })
             if rel.collection:
-                qs = getattr(self.obj, name).all()
+                qs = self.resolve_relationship(name, rel).all()
                 rel_data = rel_obj.setdefault("data", [])
                 for v in qs:
                     rel_data.append(rel.resource_class()(v).get_identifier())
             else:
-                v = getattr(self.obj, name)
+                v = self.resolve_relationship(name, rel)
                 if v is not None:
                     rel_obj["data"] = rel.resource_class()(v).get_identifier()
                 else:
