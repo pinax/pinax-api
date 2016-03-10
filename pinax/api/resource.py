@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import datetime
+
 from functools import partial
 from operator import attrgetter, itemgetter
 
@@ -7,7 +9,9 @@ from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db.models.query import ModelIterable
 
+from . import rfc3339
 from .exceptions import SerializationError
+from .registry import registry
 
 
 class Attribute(object):
@@ -154,11 +158,7 @@ class Resource(object):
             return request.build_absolute_uri(url)
         return url
 
-    def serializable(self, links=False, included=None, linkage=False, request=None):
-        data = {}
-        data.update(self.get_identifier())
-        if linkage:
-            return data
+    def serialize(self, links=False, request=None):
         attributes = {}
         for attr in self.attributes:
             if isinstance(attr, str):
@@ -182,14 +182,27 @@ class Resource(object):
                     rel_obj["data"] = rel.resource_class()(v).get_identifier()
                 else:
                     rel_obj["data"] = None
-        if included is not None:
-            for path in included.paths:
-                resolve_include(self, path, included)
-        data["attributes"] = attributes
+        data = {
+            "attributes": attributes,
+        }
+        data.update(self.get_identifier())
         if links:
             data["links"] = {"self": self.get_self_link(request=request)}
         if relationships:
             data["relationships"] = relationships
+        return data
+
+    def serializable(self, linkage=False, included=None, **kwargs):
+        data = {}
+        if linkage:
+            data.update(self.get_identifier())
+        else:
+            data.update(self.serialize(**kwargs))
+        if included is not None:
+            if linkage:
+                included.add(registry.get(self.api_type)(self.obj))
+            for path in included.paths:
+                resolve_include(self, path, included)
         return data
 
 
