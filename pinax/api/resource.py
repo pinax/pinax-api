@@ -201,10 +201,14 @@ def resolve_include(resource, path, included):
     if head not in resource.relationships:
         raise SerializationError("'{}' is not a valid relationship to include".format(head))
     rel = resource.relationships[head]
-    for obj in getattr(resource.obj, head).all():
-        r = rel.resource_class()(obj)
-        if rest:
-            resolve_include(r, rest, included)
+    if rel.collection:
+        for obj in getattr(resource.obj, head).all():
+            r = rel.resource_class()(obj)
+            if rest:
+                resolve_include(r, rest, included)
+            included.add(r)
+    else:
+        r = rel.resource_class()(getattr(resource.obj, head))
         included.add(r)
 
 
