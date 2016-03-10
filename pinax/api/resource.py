@@ -159,7 +159,11 @@ class Resource(object):
         return url
 
     def resolve_attr(self, attr):
-        return resolve_value(getattr(self.obj, attr.obj_attr))
+        if hasattr(self, attr.obj_attr):
+            value = getattr(self, attr.obj_attr)
+        else:
+            value = getattr(self.obj, attr.obj_attr)
+        return resolve_value(value)
 
     def resolve_relationship(self, related_name, rel):
         return getattr(self.obj, related_name)
