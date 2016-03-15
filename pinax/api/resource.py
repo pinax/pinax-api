@@ -16,9 +16,10 @@ from .registry import registry
 
 class Attribute(object):
 
-    def __init__(self, name, obj_attr=None):
+    def __init__(self, name, obj_attr=None, scope="rw"):
         self.name = name
         self.obj_attr = name if obj_attr is None else obj_attr
+        self.scope = scope
 
 
 class ResourceIterable(ModelIterable):
@@ -33,6 +34,14 @@ class ResourceIterable(ModelIterable):
 
 
 empty = object()
+
+
+def scoped(iterable, scope):
+    for attr in iterable:
+        if isinstance(attr, str):
+            attr = Attribute(name=attr)
+        if scope in attr.scope:
+            yield attr
 
 
 class Resource(object):
@@ -53,9 +62,7 @@ class Resource(object):
         if obj is None:
             obj = self.model()
         self.obj = obj
-        for attr in self.attributes:
-            if isinstance(attr, str):
-                attr = Attribute(name=attr)
+        for attr in scoped(self.attributes, "w"):
             value = data["attributes"].get(attr.name, empty)
             if value is not empty:
                 self.set_attr(attr, value)
@@ -181,9 +188,7 @@ class Resource(object):
 
     def serialize(self, links=False, request=None):
         attributes = {}
-        for attr in self.attributes:
-            if isinstance(attr, str):
-                attr = Attribute(name=attr)
+        for attr in scoped(self.attributes, "r"):
             attributes[attr.name] = self.get_attr(attr)
         relationships = {}
         for name, rel in self.relationships.items():
