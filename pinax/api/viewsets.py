@@ -42,13 +42,13 @@ class EndpointSet(View):
 
     def dispatch(self, request, *args, **kwargs):
         try:
-            self.check_authentication()
-            self.prepare()
-            self.check_permissions()
             if request.method.lower() in self.http_method_names:
                 handler = getattr(self, request.method.lower(), self.http_method_not_allowed)
             else:
                 handler = self.http_method_not_allowed
+            self.check_authentication(handler)
+            self.prepare()
+            self.check_permissions(handler)
             response = handler(request, *args, **kwargs)
         except Exception as exc:
             response = self.handle_exception(exc)
@@ -72,20 +72,28 @@ class EndpointSet(View):
     def prepare(self):
         pass
 
-    def check_authentication(self):
-        for backend in getattr(self, "middleware", {}).get("authentication", []):
+    def check_authentication(self, handler):
+        user = None
+        backends = []
+        backends.extend(getattr(handler, "authentication", []))
+        backends.extend(getattr(self, "middleware", {}).get("authentication", []))
+        for backend in backends:
             try:
                 user = backend.authenticate(self.request)
             except AuthenticationFailed as exc:
                 raise ErrorResponse(**self.error_response_kwargs(str(exc), status=401))
             if user:
+                self.request.user = user
                 break
         else:
-            raise ErrorResponse(**self.error_response_kwargs("Authentication Required.", status=401))
-        self.request.user = user
+            if not self.request.user.is_authenticated():
+                raise ErrorResponse(**self.error_response_kwargs("Authentication Required.", status=401))
 
-    def check_permissions(self):
-        for perm in getattr(self, "middleware", {}).get("permissions", []):
+    def check_permissions(self, handler):
+        perms = []
+        perms.extend(getattr(handler, "permissions", []))
+        perms.extend(getattr(self, "middleware", {}).get("permissions", []))
+        for perm in perms:
             res = perm(self.request, view=self)
             if res is None:
                 continue
