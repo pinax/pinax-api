@@ -8,7 +8,7 @@ import traceback
 from django.conf import settings
 from django.conf.urls import url
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.http import Http404
+from django.http import HttpResponse, Http404
 from django.views.generic import View
 from django.views.decorators.csrf import csrf_exempt
 
@@ -50,6 +50,8 @@ class EndpointSet(View):
             self.prepare()
             self.check_permissions(handler)
             response = handler(request, *args, **kwargs)
+            if not isinstance(response, HttpResponse):
+                raise ValueError("view did not return an HttpResponse (got: {})".format(type(response)))
         except Exception as exc:
             response = self.handle_exception(exc)
         return response
