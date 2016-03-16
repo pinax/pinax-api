@@ -56,13 +56,17 @@ class EndpointSet(View):
             response = self.handle_exception(exc)
         return response
 
+    @property
+    def debug(self):
+        return settings.DEBUG or getattr(settings, "PINAX_API_DEBUG", False)
+
     def handle_exception(self, exc):
         if isinstance(exc, ErrorResponse):
             return exc.response
         elif isinstance(exc, Http404):
             return self.render_error(exc.args[0], status=404)
         else:
-            if settings.DEBUG or getattr(settings, "PINAX_API_DEBUG", False):
+            if self.debug:
                 traceback.print_exc()
                 return self.render_error(
                     traceback.format_exc().splitlines()[-1],
