@@ -62,7 +62,7 @@ class EndpointSet(View):
         elif isinstance(exc, Http404):
             return self.render_error(exc.args[0], status=404)
         else:
-            if not settings.DEBUG:
+            if settings.DEBUG or settings.PINAX_API_DEBUG:
                 traceback.print_exc()
                 return self.render_error(
                     traceback.format_exc().splitlines()[-1],
