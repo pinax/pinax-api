@@ -241,7 +241,7 @@ class RelationshipEndpointSet(EndpointSet):
     def as_urls(cls, base_url, related_name):
         urls = [
             url(
-                r"{}/relationships/{}$".format(
+                r"^{}/relationships/{}$".format(
                     base_url.detail_regex(),
                     related_name,
                 ),
