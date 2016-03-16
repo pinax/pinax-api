@@ -1,12 +1,5 @@
 from __future__ import unicode_literals
 
-from .http import Response
-from .jsonapi import TopLevel
-
-
-def handler404(request):
-    return Response(TopLevel(errors=[{"status": "404"}]), status=404)
-
 
 class URL(object):
 

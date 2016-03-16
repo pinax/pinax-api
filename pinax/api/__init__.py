@@ -11,5 +11,6 @@ from .registry import register, bind, registry  # noqa
 from .relationships import Relationship  # noqa
 from .resource import Resource, Attribute  # noqa
 from .test import TestCase  # noqa
-from .urls import URL as url, handler404  # noqa
+from .urls import URL as url  # noqa
+from .views import handler404  # noqa
 from .viewsets import ResourceEndpointSet, RelationshipEndpointSet  # noqa
