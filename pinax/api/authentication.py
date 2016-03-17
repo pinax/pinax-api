@@ -1,6 +1,3 @@
-from django.contrib.auth.models import AnonymousUser
-
-
 def add(backends):
     def decorator(func):
         func.authentication = backends
@@ -11,4 +8,5 @@ def add(backends):
 class Anonymous(object):
 
     def authenticate(self, request):
+        from django.contrib.auth.models import AnonymousUser
         return AnonymousUser()
