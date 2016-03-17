@@ -1,6 +1,9 @@
 from __future__ import unicode_literals
 
-from collections import abc
+try:
+    from collections import abc
+except ImportError:
+    import collections as abc
 
 from .resource import Resource
 
