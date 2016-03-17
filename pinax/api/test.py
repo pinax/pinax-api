@@ -3,10 +3,16 @@ from django.test import TestCase as BaseTestCase
 
 class TestCase(BaseTestCase):
 
-    def assertUnorderedListEqual(self, a, b):
+    def assertGraphEqual(self, a, b):
         """
-        Compare two unordered and unhashable lists.
-        Ensure the same number of identical elements exist in each list.
-        O(n^2) complexity.
+        Compare two lists of JSON:API resources.
         """
-        return len(a) == len(b) and all(a.count(i) == b.count(i) for i in a)
+        a_graph, b_graph = {}, {}
+        for i in a:
+            a_graph[(i["type"], i["id"])] = i
+        for i in b:
+            b_graph[(i["type"], i["id"])] = i
+        self.assertTrue(len(a) == len(b), "Mismatched included lengths")
+        for rid in a_graph:
+            self.assertIn(rid, b_graph, "{} is missing from other included".format(rid))
+            self.assertEqual(a_graph[rid], b_graph[rid])
