@@ -2,9 +2,11 @@ import datetime
 import re
 
 
-_datetime_re = re.compile(r"^(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})T"
-r"(?P<hour>\d{2}):(?P<minute>\d{2})(:(?P<second>\d{2})(\.(?P<fraction>\d+))?)"
-r"((?P<tzzulu>Z)|((?P<tzoffset>[\-+])(?P<tzhour>\d{2}):(?P<tzminute>\d{2})))$")
+_datetime_re = re.compile(
+    r"^(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})T"
+    r"(?P<hour>\d{2}):(?P<minute>\d{2})(:(?P<second>\d{2})(\.(?P<fraction>\d+))?)"
+    r"((?P<tzzulu>Z)|((?P<tzoffset>[\-+])(?P<tzhour>\d{2}):(?P<tzminute>\d{2})))$"
+)
 
 
 def parse(text):
@@ -26,6 +28,7 @@ def parse(text):
                 self.minutes = +minutes
             else:
                 self.minutes = -minutes
+
         def utcoffset(self, dt):
             return datetime.timedelta(minutes=self.minutes)
 
