@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import contextlib
 import functools
 import json
+import logging
 import traceback
 
 from django.conf import settings
@@ -15,6 +16,9 @@ from django.views.decorators.csrf import csrf_exempt
 from .exceptions import ErrorResponse, AuthenticationFailed, SerializationError
 from .http import Response
 from .jsonapi import TopLevel, Included
+
+
+logger = logging.getLogger(__name__)
 
 
 class EndpointSet(View):
@@ -66,8 +70,8 @@ class EndpointSet(View):
         elif isinstance(exc, Http404):
             return self.render_error(exc.args[0], status=404)
         else:
+            logger.error("{}: {}".format(type(exc), str(exc)), exc_info=True)
             if self.debug:
-                traceback.print_exc()
                 return self.render_error(
                     traceback.format_exc().splitlines()[-1],
                     status=500
