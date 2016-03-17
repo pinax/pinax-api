@@ -116,7 +116,7 @@ class EndpointSet(View):
         try:
             return json.loads(self.request.body.decode(settings.DEFAULT_CHARSET))
         except json.JSONDecodeError as e:
-            raise ErrorResponse(**self.error_kwargs(str(e), title="Invalid JSON", status=400))
+            raise ErrorResponse(**self.error_response_kwargs(str(e), title="Invalid JSON", status=400))
 
     @contextlib.contextmanager
     def validate(self, resource_class, obj=None):
