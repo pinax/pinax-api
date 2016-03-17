@@ -26,6 +26,9 @@ setup(
     test_suite="runtests.runtests",
     tests_require=[
     ],
+    install_requires=[
+        "django-appconf>=1.0.1",
+    ],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Web Environment",
