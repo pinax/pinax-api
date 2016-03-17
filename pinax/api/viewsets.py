@@ -70,7 +70,7 @@ class EndpointSet(View):
         elif isinstance(exc, Http404):
             return self.render_error(exc.args[0], status=404)
         else:
-            logger.error("{}: {}".format(type(exc), str(exc)), exc_info=True)
+            logger.error("{}: {}".format(exc.__class__.__name__, str(exc)), exc_info=True)
             if self.debug:
                 return self.render_error(
                     traceback.format_exc().splitlines()[-1],
