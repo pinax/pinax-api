@@ -91,32 +91,33 @@ class TopLevel:
     def build_links(self, request=None):
         links = {}
         if request is not None:
-            page = self._current_page
             links["self"] = request.build_absolute_uri(request.path)
-            if page.has_previous():
-                u = urlparse(links["self"])
-                q = parse_qs(u.query)
-                q["page[number]"] = str(page.previous_page_number())
-                links["prev"] = ParseResult(
-                    u.scheme,
-                    u.netloc,
-                    u.path,
-                    u.params,
-                    urlencode(q),
-                    u.fragment,
-                ).geturl()
-            if page.has_next():
-                u = urlparse(links["self"])
-                q = parse_qs(u.query)
-                q["page[number]"] = str(page.next_page_number())
-                links["next"] = ParseResult(
-                    u.scheme,
-                    u.netloc,
-                    u.path,
-                    u.params,
-                    urlencode(q),
-                    u.fragment,
-                ).geturl()
+            page = self._current_page
+            if page is not None:
+                if page.has_previous():
+                    u = urlparse(links["self"])
+                    q = parse_qs(u.query)
+                    q["page[number]"] = str(page.previous_page_number())
+                    links["prev"] = ParseResult(
+                        u.scheme,
+                        u.netloc,
+                        u.path,
+                        u.params,
+                        urlencode(q),
+                        u.fragment,
+                    ).geturl()
+                if page.has_next():
+                    u = urlparse(links["self"])
+                    q = parse_qs(u.query)
+                    q["page[number]"] = str(page.next_page_number())
+                    links["next"] = ParseResult(
+                        u.scheme,
+                        u.netloc,
+                        u.path,
+                        u.params,
+                        urlencode(q),
+                        u.fragment,
+                    ).geturl()
         return links
 
     def serializable(self, request=None):
