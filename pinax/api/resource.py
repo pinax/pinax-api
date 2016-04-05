@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import datetime
 
+from collections import namedtuple
 from functools import partial
 from operator import attrgetter, itemgetter
 
@@ -44,6 +45,19 @@ def scoped(iterable, scope):
             yield attr
 
 
+class Identifier(namedtuple("Identifier", "type id")):
+
+    def __getitem__(self, key):
+        if key == "type":
+            return self.type
+        if key == "id":
+            return self.id
+        return super(Identifier, self).__getitem__(key)
+
+    def as_dict(self):
+        return {"type": self.type, "id": self.id}
+
+
 class Resource(object):
 
     api_type = ""
@@ -57,6 +71,12 @@ class Resource(object):
 
     def __init__(self, obj=None):
         self.obj = obj
+
+    def __hash__(self):
+        return hash(self.identifier)
+
+    def __eq__(self, other):
+        return self.identifier == other.identifier
 
     def populate(self, data, obj=None):
         if obj is None:
@@ -91,11 +111,9 @@ class Resource(object):
         else:
             self.obj = self.update(**update_kwargs)
 
-    def get_identifier(self):
-        return {
-            "type": self.api_type,
-            "id": str(self.id),
-        }
+    @property
+    def identifier(self):
+        return Identifier(type=self.api_type, id=str(self.id))
 
     def resolve_url_kwargs(self):
         assert hasattr(self, "viewset"), "resolve_url_kwargs requires a bound resource (got {}).".format(self)
@@ -201,17 +219,17 @@ class Resource(object):
                 qs = self.get_relationship(name, rel).all()
                 rel_data = rel_obj.setdefault("data", [])
                 for v in qs:
-                    rel_data.append(rel.resource_class()(v).get_identifier())
+                    rel_data.append(rel.resource_class()(v).identifier.as_dict())
             else:
                 v = self.get_relationship(name, rel)
                 if v is not None:
-                    rel_obj["data"] = rel.resource_class()(v).get_identifier()
+                    rel_obj["data"] = rel.resource_class()(v).identifier.as_dict()
                 else:
                     rel_obj["data"] = None
         data = {
             "attributes": attributes,
         }
-        data.update(self.get_identifier())
+        data.update(self.identifier.as_dict())
         if links:
             data["links"] = {"self": self.get_self_link(request=request)}
         if relationships:
@@ -221,7 +239,7 @@ class Resource(object):
     def serializable(self, linkage=False, included=None, **kwargs):
         data = {}
         if linkage:
-            data.update(self.get_identifier())
+            data.update(self.identifier.as_dict())
         else:
             data.update(self.serialize(**kwargs))
         if included is not None:
