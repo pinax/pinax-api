@@ -6,6 +6,9 @@ except ImportError:
     import collections as abc
 
 from django.core.paginator import Paginator
+from django.utils.six.moves.urllib.parse import (
+    urlparse, parse_qs, urlencode, ParseResult
+)
 
 from .resource import Resource
 
@@ -48,6 +51,9 @@ class TopLevel:
         self.meta = meta
         self.linkage = linkage
 
+        # internal state
+        self._current_page = None
+
     def get_serializable_data(self, request=None):
         if isinstance(self.data, abc.Iterable):
             ret = []
@@ -63,7 +69,7 @@ class TopLevel:
                         page = paginator.page(page_number)
                 else:
                     page = paginator.page(1)
-                data = page
+                self._current_page = data = page
             for x in data:
                 ret.append(x.serializable(
                     links=self.links,
@@ -82,6 +88,37 @@ class TopLevel:
         else:
             return self.data
 
+    def build_links(self, request=None):
+        links = {}
+        if request is not None:
+            page = self._current_page
+            links["self"] = request.build_absolute_uri(request.path)
+            if page.has_previous():
+                u = urlparse(links["self"])
+                q = parse_qs(u.query)
+                q["page[number]"] = str(page.previous_page_number())
+                links["prev"] = ParseResult(
+                    u.scheme,
+                    u.netloc,
+                    u.path,
+                    u.params,
+                    urlencode(q),
+                    u.fragment,
+                ).geturl()
+            if page.has_next():
+                u = urlparse(links["self"])
+                q = parse_qs(u.query)
+                q["page[number]"] = str(page.next_page_number())
+                links["next"] = ParseResult(
+                    u.scheme,
+                    u.netloc,
+                    u.path,
+                    u.params,
+                    urlencode(q),
+                    u.fragment,
+                ).geturl()
+        return links
+
     def serializable(self, request=None):
         res = {"jsonapi": {"version": "1.0"}}
         if self.data is not None:
@@ -93,5 +130,5 @@ class TopLevel:
         if self.meta is not None:
             res.update(dict(meta=self.meta))
         if self.links:
-            res.update(dict(links={"self": request.build_absolute_uri(request.path)}))
+            res.update(dict(links=self.build_links(request=request)))
         return res
