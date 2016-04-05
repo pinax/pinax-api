@@ -5,6 +5,8 @@ try:
 except ImportError:
     import collections as abc
 
+from django.core.paginator import Paginator
+
 from .resource import Resource
 
 
@@ -49,7 +51,20 @@ class TopLevel:
     def get_serializable_data(self, request=None):
         if isinstance(self.data, abc.Iterable):
             ret = []
-            for x in self.data:
+            data = self.data
+            if request is not None:
+                paginator = Paginator(data, 100)
+                if "page[number]" in request.GET:
+                    try:
+                        page_number = int(request.GET.get("page[number]", "1"))
+                    except ValueError:
+                        page = paginator.page(1)
+                    else:
+                        page = paginator.page(page_number)
+                else:
+                    page = paginator.page(1)
+                data = page
+            for x in data:
                 ret.append(x.serializable(
                     links=self.links,
                     linkage=self.linkage,
