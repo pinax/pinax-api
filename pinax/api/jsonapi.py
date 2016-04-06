@@ -77,16 +77,22 @@ class TopLevel:
                     included=self.included,
                     request=request,
                 ))
-            return ret, dict(total_count=len(self.data))
+            total_count = dict(total_count=len(self.data))
+            if self.meta:
+                self.meta.update(total_count)
+            else:
+                self.meta = total_count
+            return ret
+
         elif isinstance(self.data, Resource):
             return self.data.serializable(
                 links=self.links,
                 linkage=self.linkage,
                 included=self.included,
                 request=request,
-            ), None
+            )
         else:
-            return self.data, None
+            return self.data
 
     def build_links(self, request=None):
         links = {}
@@ -123,13 +129,7 @@ class TopLevel:
     def serializable(self, request=None):
         res = {"jsonapi": {"version": "1.0"}}
         if self.data is not None:
-            data, meta = self.get_serializable_data(request=request)
-            res.update(dict(data=data))
-            if meta:
-                if self.meta:
-                    self.meta.update(meta)
-                else:
-                    self.meta = meta
+            res.update(dict(data=self.get_serializable_data(request=request)))
         if self.errors is not None:
             res.update(dict(errors=self.errors))
         if self.included:
