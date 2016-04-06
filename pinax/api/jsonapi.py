@@ -77,11 +77,16 @@ class TopLevel:
                     included=self.included,
                     request=request,
                 ))
-            total_count = dict(total_count=len(self.data))
+
+            # Obtain meta-data for iterable pagination
+            paginator = dict(paginator=dict(
+                count=paginator.count,
+                num_pages=paginator.num_pages
+            ))
             if self.meta:
-                self.meta.update(total_count)
+                self.meta.update(paginator)
             else:
-                self.meta = total_count
+                self.meta = paginator
             return ret
         elif isinstance(self.data, Resource):
             return self.data.serializable(
