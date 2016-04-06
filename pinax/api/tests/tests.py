@@ -115,3 +115,91 @@ class TestAssertResourceGraph(TestCase):
         b = [self.first_item, self.fourth_item]
         with self.assertRaises(AssertionError):
             self.assertResourceGraphEqual(a, b)
+
+
+class TestPagination(TestCase):
+    """
+    Check the meta["paginator"] response values.
+    """
+
+    def setUp(self):
+        pass
+
+    def test_empty_collection(self):
+        pass
+
+    def test_single_item(self):
+        """
+        Ensure correct response for a "collection" of one item.
+        """
+        pass
+
+    def test_multiple_items(self):
+        """
+        Ensure correct response for a collection of several items.
+        """
+        pass
+
+
+class TestPaginationPageSize(TestCase):
+    """
+    Verify proper operation of "page[size]" pagination in request.GET.
+    """
+
+    def setUp(self):
+        pass
+
+    def test_one_item_size_zero(self):
+        """
+        No idea what will happen here!
+        """
+        pass
+
+    def test_two_items_size_one(self):
+        """
+        Ensure we see just first item in response.
+        """
+
+    def test_two_items_size_two(self):
+        """
+        Ensure we see both items in response.
+        """
+
+
+class TestPaginationPageNumber(TestCase):
+    """
+    Verify proper operation of "page[number]" pagination in request.GET.
+    """
+
+    def setUp(self):
+        pass
+
+    def test_page_zero(self):
+        """
+        No idea what will happen here!
+        """
+        pass
+
+    def test_page_negative(self):
+        """
+        No idea what will happen here!
+        """
+        pass
+
+    def test_first_page(self):
+        """
+        Ensure correct items are returned
+        """
+        pass
+
+    def test_last_page(self):
+        """
+        Ensure correct items are returned
+        """
+        pass
+
+    def test_beyond_page(self):
+        """
+        Ensure error is correct for page exceeding the number of pages.
+        """
+        pass

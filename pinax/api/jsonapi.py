@@ -46,7 +46,7 @@ class TopLevel:
                 errs.append(err)
         return cls(errors=errs)
 
-    def __init__(self, data=None, errors=None, links=False, included=None, meta=None, linkage=False):
+    def __init__(self, data=None, errors=None, links=False, included=None, meta={}, linkage=False):
         self.data = data
         self.errors = errors
         self.links = links
@@ -93,10 +93,7 @@ class TopLevel:
                 count=paginator.count,
                 num_pages=paginator.num_pages
             ))
-            if self.meta:
-                self.meta.update(paginator)
-            else:
-                self.meta = paginator
+            self.meta.update(paginator)
             return ret
         elif isinstance(self.data, Resource):
             return self.data.serializable(
@@ -148,7 +145,7 @@ class TopLevel:
             res.update(dict(errors=self.errors))
         if self.included:
             res.update(dict(included=[r.serializable(links=self.links, request=request) for r in self.included]))
-        if self.meta is not None:
+        if self.meta is not {}:
             res.update(dict(meta=self.meta))
         if self.links:
             res.update(dict(links=self.build_links(request=request)))
