@@ -13,6 +13,9 @@ from django.utils.six.moves.urllib.parse import (
 from .resource import Resource
 
 
+PAGINATOR_PER_PAGE = "100"  # default number of items shown per page
+
+
 class Included(set):
 
     def __init__(self, paths):
@@ -59,7 +62,14 @@ class TopLevel:
             ret = []
             data = self.data
             if request is not None:
-                paginator = Paginator(data, 100)
+                if "page[size]" in request.GET:
+                    try:
+                        per_page = int(request.GET.get("page[size]", PAGINATOR_PER_PAGE))
+                    except ValueError:
+                        per_page = int(PAGINATOR_PER_PAGE)
+                else:
+                    per_page = int(PAGINATOR_PER_PAGE)
+                paginator = Paginator(data, per_page)
                 if "page[number]" in request.GET:
                     try:
                         page_number = int(request.GET.get("page[number]", "1"))
