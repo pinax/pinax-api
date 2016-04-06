@@ -83,7 +83,6 @@ class TopLevel:
             else:
                 self.meta = total_count
             return ret
-
         elif isinstance(self.data, Resource):
             return self.data.serializable(
                 links=self.links,
