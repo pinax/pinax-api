@@ -160,7 +160,10 @@ class Resource(object):
         return getattr(self.obj, related_name)
 
     def set_attr(self, attr, value):
-        setattr(self.obj, attr.obj_attr, value)
+        if hasattr(self, attr.obj_attr):
+            setattr(self, attr.obj_attr, value)
+        else:
+            setattr(self.obj, attr.obj_attr, value)
 
     def set_relationship(self, related_name, rel, value):
         attr = rel.attr if rel.attr is not None else related_name
