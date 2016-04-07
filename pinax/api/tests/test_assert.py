@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
 
-from ..test import TestCase
+from .test import TestCase
 
 
 class TestAssertResourceGraph(TestCase):

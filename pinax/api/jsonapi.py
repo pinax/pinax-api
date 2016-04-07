@@ -13,6 +13,9 @@ from django.utils.six.moves.urllib.parse import (
 from .resource import Resource
 
 
+PAGINATOR_PER_PAGE = 100  # default number of items shown per page
+
+
 class Included(set):
 
     def __init__(self, paths):
@@ -48,7 +51,7 @@ class TopLevel:
         self.errors = errors
         self.links = links
         self.included = included
-        self.meta = meta
+        self.meta = meta if meta else {}
         self.linkage = linkage
 
         # internal state
@@ -59,17 +62,17 @@ class TopLevel:
             ret = []
             data = self.data
             if request is not None:
-                paginator = Paginator(data, 100)
-                if "page[number]" in request.GET:
-                    try:
-                        page_number = int(request.GET.get("page[number]", "1"))
-                    except ValueError:
-                        page = paginator.page(1)
-                    else:
-                        page = paginator.page(page_number)
-                else:
-                    page = paginator.page(1)
-                self._current_page = data = page
+                per_page, page_number = self.get_pagination_values(request)
+                paginator = Paginator(data, per_page)
+                self._current_page = data = paginator.page(page_number)
+
+                # Obtain pagination meta-data
+                paginator = dict(paginator=dict(
+                    count=paginator.count,
+                    num_pages=paginator.num_pages
+                ))
+                self.meta.update(paginator)
+
             for x in data:
                 ret.append(x.serializable(
                     links=self.links,
@@ -87,6 +90,28 @@ class TopLevel:
             )
         else:
             return self.data
+
+    def get_pagination_values(self, request):
+        if "page[size]" in request.GET:
+            try:
+                per_page = int(request.GET.get("page[size]", str(PAGINATOR_PER_PAGE)))
+            except ValueError:
+                per_page = PAGINATOR_PER_PAGE
+        else:
+            per_page = PAGINATOR_PER_PAGE
+        if per_page == 0:
+            # Zero is invalid number of items per page.
+            # Protect against Django division by zero error.
+            per_page = PAGINATOR_PER_PAGE
+
+        if "page[number]" in request.GET:
+            try:
+                page_number = int(request.GET.get("page[number]", "1"))
+            except ValueError:
+                page_number = 1
+        else:
+            page_number = 1
+        return per_page, page_number
 
     def build_links(self, request=None):
         links = {}
@@ -128,7 +153,7 @@ class TopLevel:
             res.update(dict(errors=self.errors))
         if self.included:
             res.update(dict(included=[r.serializable(links=self.links, request=request) for r in self.included]))
-        if self.meta is not None:
+        if self.meta:
             res.update(dict(meta=self.meta))
         if self.links:
             res.update(dict(links=self.build_links(request=request)))
