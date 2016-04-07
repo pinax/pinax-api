@@ -69,6 +69,10 @@ class TopLevel:
                         per_page = PAGINATOR_PER_PAGE
                 else:
                     per_page = PAGINATOR_PER_PAGE
+                if per_page == 0:
+                    # Zero is invalid number of items per page.
+                    # Protect against Django division by zero error.
+                    per_page = PAGINATOR_PER_PAGE
                 paginator = Paginator(data, per_page)
                 if "page[number]" in request.GET:
                     try:
@@ -80,6 +84,14 @@ class TopLevel:
                 else:
                     page = paginator.page(1)
                 self._current_page = data = page
+
+                # Obtain pagination meta-data
+                paginator = dict(paginator=dict(
+                    count=paginator.count,
+                    num_pages=paginator.num_pages
+                ))
+                self.meta.update(paginator)
+
             for x in data:
                 ret.append(x.serializable(
                     links=self.links,
@@ -87,13 +99,6 @@ class TopLevel:
                     included=self.included,
                     request=request,
                 ))
-
-            # Obtain meta-data for iterable pagination
-            paginator = dict(paginator=dict(
-                count=paginator.count,
-                num_pages=paginator.num_pages
-            ))
-            self.meta.update(paginator)
             return ret
         elif isinstance(self.data, Resource):
             return self.data.serializable(
