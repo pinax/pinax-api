@@ -62,28 +62,9 @@ class TopLevel:
             ret = []
             data = self.data
             if request is not None:
-                if "page[size]" in request.GET:
-                    try:
-                        per_page = int(request.GET.get("page[size]", str(PAGINATOR_PER_PAGE)))
-                    except ValueError:
-                        per_page = PAGINATOR_PER_PAGE
-                else:
-                    per_page = PAGINATOR_PER_PAGE
-                if per_page == 0:
-                    # Zero is invalid number of items per page.
-                    # Protect against Django division by zero error.
-                    per_page = PAGINATOR_PER_PAGE
+                per_page, page_number = self.get_pagination_values(request)
                 paginator = Paginator(data, per_page)
-                if "page[number]" in request.GET:
-                    try:
-                        page_number = int(request.GET.get("page[number]", "1"))
-                    except ValueError:
-                        page = paginator.page(1)
-                    else:
-                        page = paginator.page(page_number)
-                else:
-                    page = paginator.page(1)
-                self._current_page = data = page
+                self._current_page = data = paginator.page(page_number)
 
                 # Obtain pagination meta-data
                 paginator = dict(paginator=dict(
@@ -109,6 +90,28 @@ class TopLevel:
             )
         else:
             return self.data
+
+    def get_pagination_values(self, request):
+        if "page[size]" in request.GET:
+            try:
+                per_page = int(request.GET.get("page[size]", str(PAGINATOR_PER_PAGE)))
+            except ValueError:
+                per_page = PAGINATOR_PER_PAGE
+        else:
+            per_page = PAGINATOR_PER_PAGE
+        if per_page == 0:
+            # Zero is invalid number of items per page.
+            # Protect against Django division by zero error.
+            per_page = PAGINATOR_PER_PAGE
+
+        if "page[number]" in request.GET:
+            try:
+                page_number = int(request.GET.get("page[number]", "1"))
+            except ValueError:
+                page_number = 1
+        else:
+            page_number = 1
+        return per_page, page_number
 
     def build_links(self, request=None):
         links = {}

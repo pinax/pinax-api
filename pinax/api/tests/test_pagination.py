@@ -394,4 +394,3 @@ class TestPaginationPageNumber(TestCase):
         self.request.GET["page[number]"] = 5
         with self.assertRaises(EmptyPage):
             self.top_level.serializable(request=self.request)
-
