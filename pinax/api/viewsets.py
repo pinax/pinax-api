@@ -139,17 +139,17 @@ class EndpointSet(View):
                 status=400,
             )
 
-    def render(self, resource, meta=None):
+    def render(self, resource, **kwargs):
         try:
-            payload = self.create_top_level(resource, meta=meta).serializable(request=self.request)
+            payload = self.create_top_level(resource, **kwargs).serializable(request=self.request)
         except SerializationError as exc:
             return self.render_error(str(exc), status=400)
         else:
             return Response(payload, status=200)
 
-    def render_create(self, resource, meta=None):
+    def render_create(self, resource, **kwargs):
         try:
-            payload = self.create_top_level(resource, meta=meta).serializable(request=self.request)
+            payload = self.create_top_level(resource, **kwargs).serializable(request=self.request)
         except SerializationError as exc:
             return self.render_error(str(exc), status=400)
         else:
@@ -184,13 +184,14 @@ class EndpointSet(View):
         except ObjectDoesNotExist:
             raise Http404("{} does not exist.".format(qs.model._meta.verbose_name.capitalize()))
 
-    def create_top_level(self, resource, linkage=False, meta=None):
-        kwargs = {
-            "data": resource,
-            "meta": meta,
-            "links": True,
-            "linkage": linkage,
-        }
+    def create_top_level(self, resource, linkage=False, **kwargs):
+        kwargs.update(
+            {
+                "data": resource,
+                "links": True,
+                "linkage": linkage,
+            }
+        )
         if "include" in self.request.GET:
             kwargs["included"] = Included(self.request.GET["include"].split(","))
         return TopLevel(**kwargs)
