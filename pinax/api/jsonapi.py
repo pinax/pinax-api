@@ -46,12 +46,12 @@ class TopLevel:
                 errs.append(err)
         return cls(errors=errs)
 
-    def __init__(self, data=None, errors=None, links=False, included=None, meta={}, linkage=False):
+    def __init__(self, data=None, errors=None, links=False, included=None, meta=None, linkage=False):
         self.data = data
         self.errors = errors
         self.links = links
         self.included = included
-        self.meta = meta
+        self.meta = meta if meta else {}
         self.linkage = linkage
 
         # internal state
@@ -153,7 +153,7 @@ class TopLevel:
             res.update(dict(errors=self.errors))
         if self.included:
             res.update(dict(included=[r.serializable(links=self.links, request=request) for r in self.included]))
-        if self.meta is not {}:
+        if self.meta:
             res.update(dict(meta=self.meta))
         if self.links:
             res.update(dict(links=self.build_links(request=request)))
