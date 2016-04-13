@@ -71,6 +71,7 @@ class Resource(object):
 
     def __init__(self, obj=None):
         self.obj = obj
+        self.meta = {}
 
     def __hash__(self):
         return hash(self.identifier)
@@ -233,6 +234,10 @@ class Resource(object):
             "attributes": attributes,
         }
         data.update(self.identifier.as_dict())
+        meta = {}
+        meta.update(self.meta)
+        if meta:
+            data["meta"] = meta
         if links:
             data["links"] = {"self": self.get_self_link(request=request)}
         if relationships:
