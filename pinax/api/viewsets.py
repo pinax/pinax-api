@@ -126,9 +126,9 @@ class EndpointSet(View):
     def validate(self, resource_class, obj=None):
         data = self.parse_data()
         if "data" not in data:
-            raise ErrorResponse(**self.error_kwargs('Missing "data" key in payload.', status=400))
+            raise ErrorResponse(**self.error_response_kwargs('Missing "data" key in payload.', status=400))
         if "attributes" not in data["data"]:
-            raise ErrorResponse(**self.error_kwargs('Missing "attributes" key in data.', status=400))
+            raise ErrorResponse(**self.error_response_kwargs('Missing "attributes" key in data.', status=400))
         resource = resource_class()
         try:
             resource.populate(data["data"], obj=obj)
