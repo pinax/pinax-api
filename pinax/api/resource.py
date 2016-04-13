@@ -12,7 +12,6 @@ from django.db.models.query import ModelIterable
 
 from . import rfc3339
 from .exceptions import SerializationError
-from .registry import registry
 
 
 class Attribute(object):
@@ -252,13 +251,15 @@ class Resource(object):
             data.update(self.serialize(**kwargs))
         if included is not None:
             if linkage:
-                included.add(registry.get(self.api_type)(self.obj))
+                included.add(self)
             for path in included.paths:
                 resolve_include(self, path, included)
         return data
 
 
 def resolve_include(resource, path, included):
+    if path == "self":
+        return
     try:
         head, rest = path.split(".", 1)
     except ValueError:
