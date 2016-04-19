@@ -5,6 +5,13 @@ def add(backends):
     return decorator
 
 
+class Session(object):
+
+    def authenticate(self, request):
+        if request.user.is_authenticated():
+            return request.user
+
+
 class Anonymous(object):
 
     def authenticate(self, request):
