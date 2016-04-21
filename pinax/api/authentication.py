@@ -5,15 +5,9 @@ def add(backends):
     return decorator
 
 
-class Session(object):
-
-    def authenticate(self, request):
-        if request.user.is_authenticated():
-            return request.user
-
-
 class Anonymous(object):
 
     def authenticate(self, request):
-        from django.contrib.auth.models import AnonymousUser
-        return AnonymousUser()
+        if not request.user.is_authenticated():
+            from django.contrib.auth.models import AnonymousUser
+            return AnonymousUser()
