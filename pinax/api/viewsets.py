@@ -158,7 +158,7 @@ class EndpointSet(View):
             return res
 
     def render_delete(self):
-        return Response({}, status=200)
+        return Response({}, status=204)
 
     def error_response_kwargs(self, message, title=None, status=400, extra=None):
         if extra is None:
