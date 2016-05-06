@@ -127,17 +127,37 @@ class EndpointSet(View):
         data = self.parse_data()
         if "data" not in data:
             raise ErrorResponse(**self.error_response_kwargs('Missing "data" key in payload.', status=400))
-        if "attributes" not in data["data"]:
+        yield self.validate_resource(resource_class, data["data"], obj)
+
+    def validate_collection(self, resource_class):
+        """
+        Generator yields resources for use as an iterable.
+        """
+        data = self.parse_data()
+        if "data" not in data:
+            raise ErrorResponse(**self.error_response_kwargs('Missing "data" key in payload.', status=400))
+
+        data_list = data["data"]
+        if not isinstance(data_list, list):
+            raise ErrorResponse(**self.error_response_kwargs("Data must be in a list.", status=400))
+
+        for resource_data in data_list:
+            yield self.validate_resource(resource_class, resource_data)
+
+    def validate_resource(self, resource_class, resource_data, obj=None):
+        if "attributes" not in resource_data:
             raise ErrorResponse(**self.error_response_kwargs('Missing "attributes" key in data.', status=400))
+
         resource = resource_class()
         try:
-            resource.populate(data["data"], obj=obj)
-            yield resource
+            resource.populate(resource_data, obj=obj)
         except ValidationError as exc:
             raise ErrorResponse(
                 TopLevel.from_validation_error(exc, resource_class).serializable(),
                 status=400,
             )
+        else:
+            return resource
 
     def render(self, resource, **kwargs):
         try:
