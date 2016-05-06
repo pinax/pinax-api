@@ -7,7 +7,7 @@ from functools import partial
 from operator import attrgetter, itemgetter
 
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, NoReverseMatch
 from django.db.models.query import ModelIterable
 
 from . import rfc3339
@@ -125,7 +125,8 @@ class Resource(object):
                 obj = self.obj
             else:
                 obj = getattr(child_obj, viewset.url.lookup["field"])
-            kwargs[viewset.url.lookup["field"]] = viewset.resource_class(obj).id
+            if viewset.url.lookup is not None:
+                kwargs[viewset.url.lookup["field"]] = viewset.resource_class(obj).id
             viewset, child_obj = viewset.parent, obj
         return kwargs
 
@@ -138,13 +139,16 @@ class Resource(object):
 
     def get_self_relationship_link(self, related_name, request=None):
         kwargs = self.resolve_url_kwargs()
-        url = reverse(
-            "{}-{}-relationship-detail".format(
-                self.viewset.url.base_name,
-                related_name,
-            ),
-            kwargs=kwargs
-        )
+        try:
+            url = reverse(
+                "{}-{}-relationship-detail".format(
+                    self.viewset.url.base_name,
+                    related_name,
+                ),
+                kwargs=kwargs
+            )
+        except NoReverseMatch:
+            return None
         if request is not None:
             return request.build_absolute_uri(url)
         return url
@@ -213,11 +217,14 @@ class Resource(object):
             attributes[attr.name] = self.get_attr(attr)
         relationships = {}
         for name, rel in self.relationships.items():
-            rel_obj = relationships.setdefault(name, {
-                "links": {
-                    "self": self.get_self_relationship_link(name, request=request),
-                },
-            })
+            rel_links = {}
+            rel_self_link = self.get_self_relationship_link(name, request=request)
+            if rel_self_link:
+                rel_links["self"] = rel_self_link
+            rel_initial = {}
+            if rel_links:
+                rel_initial["links"] = rel_links
+            rel_obj = relationships.setdefault(name, rel_initial)
             if rel.collection:
                 qs = self.get_relationship(name, rel).all()
                 rel_data = rel_obj.setdefault("data", [])

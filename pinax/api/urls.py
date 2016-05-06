@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 
 class URL(object):
 
-    def __init__(self, base_name, base_regex, lookup, parent=None):
+    def __init__(self, base_name, base_regex=None, lookup=None, parent=None):
         self._base_name = base_name
         self.base_regex = base_regex
         self.lookup = lookup
