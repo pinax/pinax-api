@@ -123,21 +123,42 @@ class EndpointSet(View):
             raise ErrorResponse(**self.error_response_kwargs(str(e), title="Invalid JSON", status=400))
 
     @contextlib.contextmanager
-    def validate(self, resource_class, obj=None):
+    def validate(self, resource_class, collection=False, obj=None):
+        """
+        Generator yields either a validated resource (collection=False)
+        or a generator callable (collection=True).
+        """
         data = self.parse_data()
         if "data" not in data:
             raise ErrorResponse(**self.error_response_kwargs('Missing "data" key in payload.', status=400))
-        if "attributes" not in data["data"]:
+
+        if not collection:
+            yield self.validate_resource(resource_class, data["data"], obj)
+
+        data_list = data["data"]
+        if not isinstance(data_list, list):
+            raise ErrorResponse(**self.error_response_kwargs("Data must be in a list.", status=400))
+
+        def resource_generator():
+            for resource_data in data_list:
+                yield self.validate_resource(resource_class, resource_data, obj)
+
+        yield resource_generator
+
+    def validate_resource(self, resource_class, resource_data, obj=None):
+        if "attributes" not in resource_data:
             raise ErrorResponse(**self.error_response_kwargs('Missing "attributes" key in data.', status=400))
+
         resource = resource_class()
         try:
-            resource.populate(data["data"], obj=obj)
-            yield resource
+            resource.populate(resource_data, obj=obj)
         except ValidationError as exc:
             raise ErrorResponse(
                 TopLevel.from_validation_error(exc, resource_class).serializable(),
                 status=400,
             )
+        else:
+            return resource
 
     def render(self, resource, **kwargs):
         try:
