@@ -40,7 +40,7 @@ Getting Started
 Documentation
 ---------------
 
-The ``pinax-api`` documentation is currently under construction. The Pinax documentatio is available at http://pinaxproject.com/pinax/. If you would like to help us write documentation, please join our Pinax Slack team and let us know!
+The ``pinax-api`` documentation is currently under construction. The Pinax documentation is available at http://pinaxproject.com/pinax/. If you would like to help us write documentation, please join our Pinax Slack team and let us know!
 
 
 Contribute
