@@ -126,39 +126,42 @@ class EndpointSet(View):
     def validate(self, resource_class, collection=False, obj=None):
         """
         Generator yields either a validated resource (collection=False)
-        or a generator callable (collection=True).
+        or a resource generator callable (collection=True).
+
+        ValidationError exceptions resulting from subsequent (after yield)
+        resource manipulation cause an immediate ErrorResponse.
         """
         data = self.parse_data()
         if "data" not in data:
             raise ErrorResponse(**self.error_response_kwargs('Missing "data" key in payload.', status=400))
 
-        if not collection:
-            yield self.validate_resource(resource_class, data["data"], obj)
-
-        data_list = data["data"]
-        if not isinstance(data_list, list):
+        if collection and not isinstance(data["data"], list):
             raise ErrorResponse(**self.error_response_kwargs("Data must be in a list.", status=400))
 
-        def resource_generator():
-            for resource_data in data_list:
-                yield self.validate_resource(resource_class, resource_data, obj)
-
-        yield resource_generator
-
-    def validate_resource(self, resource_class, resource_data, obj=None):
-        if "attributes" not in resource_data:
-            raise ErrorResponse(**self.error_response_kwargs('Missing "attributes" key in data.', status=400))
-
-        resource = resource_class()
         try:
-            resource.populate(resource_data, obj=obj)
+            if collection:
+                def gen_func():
+                    for resource_data in data["data"]:
+                        yield self.validate_resource(resource_class, resource_data, obj)
+
+                yield gen_func
+            else:
+                yield self.validate_resource(resource_class, data["data"], obj)
         except ValidationError as exc:
             raise ErrorResponse(
                 TopLevel.from_validation_error(exc, resource_class).serializable(),
                 status=400,
             )
-        else:
-            return resource
+
+    def validate_resource(self, resource_class, resource_data, obj=None):
+        """
+        Validates resource data for a resource class.
+        """
+        if "attributes" not in resource_data:
+            raise ErrorResponse(**self.error_response_kwargs('Missing "attributes" key in data.', status=400))
+        resource = resource_class()
+        resource.populate(resource_data, obj=obj)
+        return resource
 
     def render(self, resource, **kwargs):
         try:
