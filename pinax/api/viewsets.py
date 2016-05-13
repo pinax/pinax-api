@@ -123,21 +123,41 @@ class EndpointSet(View):
             raise ErrorResponse(**self.error_response_kwargs(str(e), title="Invalid JSON", status=400))
 
     @contextlib.contextmanager
-    def validate(self, resource_class, obj=None):
+    def validate(self, resource_class, collection=False, obj=None):
+        """
+        Generator yields either a validated resource (collection=False)
+        or a resource generator callable (collection=True).
+
+        ValidationError exceptions resulting from subsequent (after yield)
+        resource manipulation cause an immediate ErrorResponse.
+        """
         data = self.parse_data()
         if "data" not in data:
             raise ErrorResponse(**self.error_response_kwargs('Missing "data" key in payload.', status=400))
-        if "attributes" not in data["data"]:
-            raise ErrorResponse(**self.error_response_kwargs('Missing "attributes" key in data.', status=400))
-        resource = resource_class()
+
+        if collection and not isinstance(data["data"], list):
+            raise ErrorResponse(**self.error_response_kwargs("Data must be in a list.", status=400))
+
         try:
-            resource.populate(data["data"], obj=obj)
-            yield resource
+            if collection:
+                yield (self.validate_resource(resource_class, resource_data, obj) for resource_data in data["data"])
+            else:
+                yield self.validate_resource(resource_class, data["data"], obj)
         except ValidationError as exc:
             raise ErrorResponse(
                 TopLevel.from_validation_error(exc, resource_class).serializable(),
                 status=400,
             )
+
+    def validate_resource(self, resource_class, resource_data, obj=None):
+        """
+        Validates resource data for a resource class.
+        """
+        if "attributes" not in resource_data:
+            raise ErrorResponse(**self.error_response_kwargs('Missing "attributes" key in data.', status=400))
+        resource = resource_class()
+        resource.populate(resource_data, obj=obj)
+        return resource
 
     def render(self, resource, **kwargs):
         try:
