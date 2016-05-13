@@ -140,11 +140,7 @@ class EndpointSet(View):
 
         try:
             if collection:
-                def gen_func():
-                    for resource_data in data["data"]:
-                        yield self.validate_resource(resource_class, resource_data, obj)
-
-                yield gen_func
+                yield (self.validate_resource(resource_class, resource_data, obj) for resource_data in data["data"])
             else:
                 yield self.validate_resource(resource_class, data["data"], obj)
         except ValidationError as exc:
