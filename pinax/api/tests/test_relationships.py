@@ -337,7 +337,7 @@ class ArticleTagsViewSetTestCase(api.TestCase):
                             },
                             "author": {
                                 "links": {
-                                    "self":  "http://testserver{}".format(self.article_author_url)
+                                    "self": "http://testserver{}".format(self.article_author_url)
                                 },
                                 "data": {
                                     "type": "author",

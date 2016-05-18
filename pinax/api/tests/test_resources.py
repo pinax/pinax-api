@@ -85,13 +85,13 @@ class ArticleViewSetTestCase(api.TestCase):
                         "relationships": {
                             "tags": {
                                 "links": {
-                                    "self":  "http://testserver{}".format(tag_relationship_url)
+                                    "self": "http://testserver{}".format(tag_relationship_url)
                                 },
                                 "data": []
                             },
                             "author": {
                                 "links": {
-                                    "self":  "http://testserver{}".format(author_relationship_url)
+                                    "self": "http://testserver{}".format(author_relationship_url)
                                 },
                                 "data": {
                                     "type": "author",
@@ -144,13 +144,13 @@ class ArticleViewSetTestCase(api.TestCase):
                     "relationships": {
                         "tags": {
                             "links": {
-                                "self":  "http://testserver{}".format(tag_relationship_url)
+                                "self": "http://testserver{}".format(tag_relationship_url)
                             },
                             "data": []
                         },
                         "author": {
                             "links": {
-                                "self":  "http://testserver{}".format(author_relationship_url)
+                                "self": "http://testserver{}".format(author_relationship_url)
                             },
                             "data": {
                                 "type": "author",
