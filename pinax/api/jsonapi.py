@@ -116,7 +116,10 @@ class TopLevel:
     def build_links(self, request=None):
         links = {}
         if request is not None:
-            links["self"] = request.build_absolute_uri(request.path)
+            if hasattr(request, "build_absolute_uri"):
+                links["self"] = request.build_absolute_uri(request.path)
+            else:
+                links["self"] = request.path
             page = self._current_page
             if page is not None:
                 if page.has_previous():

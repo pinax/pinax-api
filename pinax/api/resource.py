@@ -133,7 +133,7 @@ class Resource(object):
     def get_self_link(self, request=None):
         kwargs = self.resolve_url_kwargs()
         url = reverse("{}-detail".format(self.viewset.url.base_name), kwargs=kwargs)
-        if request is not None:
+        if request is not None and hasattr(request, "build_absolute_uri"):
             return request.build_absolute_uri(url)
         return url
 
@@ -149,7 +149,7 @@ class Resource(object):
             )
         except NoReverseMatch:
             return None
-        if request is not None:
+        if request is not None and hasattr(request, "build_absolute_uri"):
             return request.build_absolute_uri(url)
         return url
 
