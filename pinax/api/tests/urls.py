@@ -1,9 +1,15 @@
 import itertools
 
-from .viewsets import UserViewSet
+from .viewsets import (
+    ArticleViewSet,
+    ArticleTagViewSet,
+    AuthorViewSet,
+)
 
 
 urlpatterns = []
 urlpatterns.extend(itertools.chain(
-    UserViewSet.as_urls(),
+    ArticleViewSet.as_urls(),
+    ArticleTagViewSet.as_urls(),
+    AuthorViewSet.as_urls(),
 ))

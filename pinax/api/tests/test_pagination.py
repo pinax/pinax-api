@@ -1,11 +1,15 @@
 from __future__ import unicode_literals
 
 from django.core.paginator import EmptyPage
+from django.core.urlresolvers import reverse
 from django.test import RequestFactory
 
 from ..jsonapi import TopLevel
-from .models import TestItem
-from .resources import TestItemResource
+from .. import registry
+from .models import (
+    Article,
+    Author,
+)
 from .test import TestCase
 
 
@@ -16,12 +20,14 @@ class TestPagination(TestCase):
     def setUp(self):
         self.request = RequestFactory()
         self.request.GET = {}
+        self.articles_url = reverse("article-list")
+        self.article_resource = registry["article"]
 
     def test_empty_collection(self):
         """
         Verify result with no items in collection.
         """
-        resources = TestItemResource.from_queryset(TestItem.objects.none())
+        resources = self.article_resource.from_queryset(Article.objects.none())
         data = {
             "data": resources,
             "linkage": False
@@ -47,85 +53,166 @@ class TestPagination(TestCase):
         """
         Ensure correct response for a "collection" of one item.
         """
-        item1 = TestItem.objects.create(title="test 1")
-        resources = TestItemResource.from_queryset(TestItem.objects.all())
+        author = Author.objects.create(name="Author")
+        item1 = Article.objects.create(title="test 1", author=author)
+        resources = self.article_resource.from_queryset(Article.objects.all())
         data = {
             "data": resources,
             "linkage": False
         }
         top_level = TopLevel(**data)
-        payload = top_level.serializable(request=self.request)
-        self.assertEqual(
-            payload,
-            {
-                "jsonapi": {"version": "1.0"},
-                "meta": {
-                    "paginator": {
-                        "count": 1,
-                        "num_pages": 1
-                    }
-                },
-                "data": [
-                    {
-                        "type": "testitem",
-                        "id": str(item1.pk),
-                        "attributes": {
-                            "title": item1.title,
-                        },
+        article_tags_url = reverse("article-tags-relationship-detail", kwargs=dict(pk=item1.pk))
+        expected = {
+            "jsonapi": {"version": "1.0"},
+            "meta": {
+                "paginator": {
+                    "count": 1,
+                    "num_pages": 1
+                }
+            },
+            "data": [
+                {
+                    "type": "article",
+                    "id": str(item1.pk),
+                    "attributes": {
+                        "title": item1.title,
                     },
-                ]
-            }
+                    "relationships": {
+                        "tags": {
+                            "links": {
+                                "self": "{}".format(article_tags_url)
+                            },
+                            "data": []
+                        },
+                        "author": {
+                            "links": {
+                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=item1.pk))
+                            },
+                            "data": {
+                                "type": "author",
+                                "id": str(author.pk)
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+        payload = top_level.serializable(request=self.request)
+
+        self.assertResourceGraphEqual(
+            expected.pop("data"),
+            payload.pop("data")
         )
+        # Check that the remaining JSON is identical
+        self.assertEqual(expected, payload)
+        self.assertEqual(payload, expected)
 
     def test_multiple_items(self):
         """
         Ensure correct response for a collection of several items.
         """
-        item1 = TestItem.objects.create(title="test 1")
-        item2 = TestItem.objects.create(title="test 2")
-        item3 = TestItem.objects.create(title="test 3")
-        resources = TestItemResource.from_queryset(TestItem.objects.all())
+        author = Author.objects.create(name="Author")
+        item1 = Article.objects.create(title="test 1", author=author)
+        item2 = Article.objects.create(title="test 2", author=author)
+        item3 = Article.objects.create(title="test 3", author=author)
+        resources = self.article_resource.from_queryset(Article.objects.all())
         data = {
             "data": resources,
             "linkage": False
         }
         top_level = TopLevel(**data)
-        payload = top_level.serializable(request=self.request)
-        self.assertEqual(
-            payload,
-            {
-                "jsonapi": {"version": "1.0"},
-                "meta": {
-                    "paginator": {
-                        "count": 3,
-                        "num_pages": 1
+        expected = {
+            "jsonapi": {"version": "1.0"},
+            "meta": {
+                "paginator": {
+                    "count": 3,
+                    "num_pages": 1
+                }
+            },
+            "data": [
+                {
+                    "type": "article",
+                    "id": str(item1.pk),
+                    "attributes": {
+                        "title": item1.title,
+                    },
+                    "relationships": {
+                        "tags": {
+                            "links": {
+                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=item1.pk))
+                            },
+                            "data": []
+                        },
+                        "author": {
+                            "links": {
+                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=item1.pk))
+                            },
+                            "data": {
+                                "type": "author",
+                                "id": str(author.pk)
+                            }
+                        }
                     }
                 },
-                "data": [
-                    {
-                        "type": "testitem",
-                        "id": str(item1.pk),
-                        "attributes": {
-                            "title": item1.title,
-                        },
+                {
+                    "type": "article",
+                    "id": str(item2.pk),
+                    "attributes": {
+                        "title": item2.title,
                     },
-                    {
-                        "type": "testitem",
-                        "id": str(item2.pk),
-                        "attributes": {
-                            "title": item2.title,
+                    "relationships": {
+                        "tags": {
+                            "links": {
+                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=item2.pk))
+                            },
+                            "data": []
                         },
+                        "author": {
+                            "links": {
+                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=item2.pk))
+                            },
+                            "data": {
+                                "type": "author",
+                                "id": str(author.pk)
+                            }
+                        }
+                    }
+                },
+                {
+                    "type": "article",
+                    "id": str(item3.pk),
+                    "attributes": {
+                        "title": item3.title,
                     },
-                    {
-                        "type": "testitem",
-                        "id": str(item3.pk),
-                        "attributes": {
-                            "title": item3.title,
+                    "relationships": {
+                        "tags": {
+                            "links": {
+                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=item3.pk))
+                            },
+                            "data": []
                         },
-                    },
-                ]
-            }
+                        "author": {
+                            "links": {
+                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=item3.pk))
+                            },
+                            "data": {
+                                "type": "author",
+                                "id": str(author.pk)
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+        payload = top_level.serializable(request=self.request)
+
+        self.assertResourceGraphEqual(
+            expected.pop("data"),
+            payload.pop("data")
         )
+        # Check that the remaining JSON is identical
+        self.assertEqual(expected, payload)
+        self.assertEqual(payload, expected)
 
 
 class TestPaginationPageSize(TestCase):
@@ -135,10 +222,12 @@ class TestPaginationPageSize(TestCase):
     def setUp(self):
         self.request = RequestFactory()
         self.request.GET = {}
-        self.item1 = TestItem.objects.create(title="test 1")
-        self.item2 = TestItem.objects.create(title="test 2")
-        self.item3 = TestItem.objects.create(title="test 3")
-        resources = TestItemResource.from_queryset(TestItem.objects.all())
+        self.author = Author.objects.create(name="Author")
+        self.item1 = Article.objects.create(title="test 1", author=self.author)
+        self.item2 = Article.objects.create(title="test 2", author=self.author)
+        self.item3 = Article.objects.create(title="test 3", author=self.author)
+        self.article_resource = registry["article"]
+        resources = self.article_resource.from_queryset(Article.objects.all())
         data = {
             "data": resources,
             "linkage": False
@@ -151,69 +240,150 @@ class TestPaginationPageSize(TestCase):
         """
         self.request.GET["page[size]"] = 0
         payload = self.top_level.serializable(request=self.request)
-        self.assertEqual(
-            payload,
-            {
-                "jsonapi": {"version": "1.0"},
-                "meta": {
-                    "paginator": {
-                        "count": 3,
-                        "num_pages": 1
+        expected = {
+            "jsonapi": {"version": "1.0"},
+            "meta": {
+                "paginator": {
+                    "count": 3,
+                    "num_pages": 1
+                }
+            },
+            "data": [
+                {
+                    "type": "article",
+                    "id": str(self.item1.pk),
+                    "attributes": {
+                        "title": self.item1.title,
+                    },
+                    "relationships": {
+                        "tags": {
+                            "links": {
+                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item1.pk))
+                            },
+                            "data": []
+                        },
+                        "author": {
+                            "links": {
+                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item1.pk))
+                            },
+                            "data": {
+                                "type": "author",
+                                "id": str(self.author.pk)
+                            }
+                        }
                     }
                 },
-                "data": [
-                    {
-                        "type": "testitem",
-                        "id": str(self.item1.pk),
-                        "attributes": {
-                            "title": self.item1.title,
-                        }
+                {
+                    "type": "article",
+                    "id": str(self.item2.pk),
+                    "attributes": {
+                        "title": self.item2.title,
                     },
-                    {
-                        "type": "testitem",
-                        "id": str(self.item2.pk),
-                        "attributes": {
-                            "title": self.item2.title,
-                        }
-                    },
-                    {
-                        "type": "testitem",
-                        "id": str(self.item3.pk),
-                        "attributes": {
-                            "title": self.item3.title,
+                    "relationships": {
+                        "tags": {
+                            "links": {
+                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item2.pk))
+                            },
+                            "data": []
+                        },
+                        "author": {
+                            "links": {
+                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item2.pk))
+                            },
+                            "data": {
+                                "type": "author",
+                                "id": str(self.author.pk)
+                            }
                         }
                     }
-                ]
-            }
+                },
+                {
+                    "type": "article",
+                    "id": str(self.item3.pk),
+                    "attributes": {
+                        "title": self.item3.title,
+                    },
+                    "relationships": {
+                        "tags": {
+                            "links": {
+                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item3.pk))
+                            },
+                            "data": []
+                        },
+                        "author": {
+                            "links": {
+                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item3.pk))
+                            },
+                            "data": {
+                                "type": "author",
+                                "id": str(self.author.pk)
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+        payload = self.top_level.serializable(request=self.request)
+
+        self.assertResourceGraphEqual(
+            expected.pop("data"),
+            payload.pop("data")
         )
+        # Check that the remaining JSON is identical
+        self.assertEqual(expected, payload)
+        self.assertEqual(payload, expected)
 
     def test_page_size_one(self):
         """
         Ensure we see just first item in response.
         """
         self.request.GET["page[size]"] = 1
-        payload = self.top_level.serializable(request=self.request)
-        self.assertEqual(
-            payload,
-            {
-                "jsonapi": {"version": "1.0"},
-                "meta": {
-                    "paginator": {
-                        "count": 3,
-                        "num_pages": 3
-                    }
-                },
-                "data": [
-                    {
-                        "type": "testitem",
-                        "id": str(self.item1.pk),
-                        "attributes": {
-                            "title": self.item1.title,
+
+        expected = {
+            "jsonapi": {"version": "1.0"},
+            "meta": {
+                "paginator": {
+                    "count": 3,
+                    "num_pages": 3
+                }
+            },
+            "data": [
+                {
+                    "type": "article",
+                    "id": str(self.item1.pk),
+                    "attributes": {
+                        "title": self.item1.title,
+                    },
+                    "relationships": {
+                        "tags": {
+                            "links": {
+                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item1.pk))
+                            },
+                            "data": []
+                        },
+                        "author": {
+                            "links": {
+                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item1.pk))
+                            },
+                            "data": {
+                                "type": "author",
+                                "id": str(self.author.pk)
+                            }
                         }
                     }
-                ]
-            }
+                }
+            ]
+        }
+
+        payload = self.top_level.serializable(request=self.request)
+
+        self.assertResourceGraphEqual(
+            expected.pop("data"),
+            payload.pop("data")
         )
+        # Check that the remaining JSON is identical
+        self.assertEqual(expected, payload)
+        self.assertEqual(payload, expected)
 
     def test_page_size_two(self):
         """
@@ -233,17 +403,51 @@ class TestPaginationPageSize(TestCase):
                 },
                 "data": [
                     {
-                        "type": "testitem",
+                        "type": "article",
                         "id": str(self.item1.pk),
                         "attributes": {
                             "title": self.item1.title,
+                        },
+                        "relationships": {
+                            "tags": {
+                                "links": {
+                                    "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item1.pk))
+                                },
+                                "data": []
+                            },
+                            "author": {
+                                "links": {
+                                    "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item1.pk))
+                                },
+                                "data": {
+                                    "type": "author",
+                                    "id": str(self.author.pk)
+                                }
+                            }
                         }
                     },
                     {
-                        "type": "testitem",
+                        "type": "article",
                         "id": str(self.item2.pk),
                         "attributes": {
                             "title": self.item2.title,
+                        },
+                        "relationships": {
+                            "tags": {
+                                "links": {
+                                    "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item2.pk))
+                                },
+                                "data": []
+                            },
+                            "author": {
+                                "links": {
+                                    "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item2.pk))
+                                },
+                                "data": {
+                                    "type": "author",
+                                    "id": str(self.author.pk)
+                                }
+                            }
                         }
                     }
                 ]
@@ -268,24 +472,75 @@ class TestPaginationPageSize(TestCase):
                 },
                 "data": [
                     {
-                        "type": "testitem",
+                        "type": "article",
                         "id": str(self.item1.pk),
                         "attributes": {
                             "title": self.item1.title,
+                        },
+                        "relationships": {
+                            "tags": {
+                                "links": {
+                                    "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item1.pk))
+                                },
+                                "data": []
+                            },
+                            "author": {
+                                "links": {
+                                    "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item1.pk))
+                                },
+                                "data": {
+                                    "type": "author",
+                                    "id": str(self.author.pk)
+                                }
+                            }
                         }
                     },
                     {
-                        "type": "testitem",
+                        "type": "article",
                         "id": str(self.item2.pk),
                         "attributes": {
                             "title": self.item2.title,
+                        },
+                        "relationships": {
+                            "tags": {
+                                "links": {
+                                    "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item2.pk))
+                                },
+                                "data": []
+                            },
+                            "author": {
+                                "links": {
+                                    "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item2.pk))
+                                },
+                                "data": {
+                                    "type": "author",
+                                    "id": str(self.author.pk)
+                                }
+                            }
                         }
                     },
                     {
-                        "type": "testitem",
+                        "type": "article",
                         "id": str(self.item3.pk),
                         "attributes": {
                             "title": self.item3.title,
+                        },
+                        "relationships": {
+                            "tags": {
+                                "links": {
+                                    "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item3.pk))
+                                },
+                                "data": []
+                            },
+                            "author": {
+                                "links": {
+                                    "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item3.pk))
+                                },
+                                "data": {
+                                    "type": "author",
+                                    "id": str(self.author.pk)
+                                }
+                            }
                         }
                     }
                 ]
@@ -300,15 +555,21 @@ class TestPaginationPageNumber(TestCase):
     def setUp(self):
         self.request = RequestFactory()
         self.request.GET = {}
-        self.item1 = TestItem.objects.create(title="test 1")
-        self.item2 = TestItem.objects.create(title="test 2")
-        self.item3 = TestItem.objects.create(title="test 3")
-        resources = TestItemResource.from_queryset(TestItem.objects.all())
+        self.author = Author.objects.create(name="Author")
+        self.item1 = Article.objects.create(title="test 1", author=self.author)
+        self.item2 = Article.objects.create(title="test 2", author=self.author)
+        self.item3 = Article.objects.create(title="test 3", author=self.author)
+        self.article_resource = registry["article"]
+        resources = self.article_resource.from_queryset(Article.objects.all())
         data = {
             "data": resources,
             "linkage": False
         }
         self.top_level = TopLevel(**data)
+        self.author_relationship_url = reverse(
+            "article-author-relationship-detail",
+            kwargs=dict(pk=self.item1.pk)
+        )
 
     def test_page_zero(self):
         """
@@ -335,27 +596,48 @@ class TestPaginationPageNumber(TestCase):
         self.request.GET["page[size]"] = 1
         self.request.GET["page[number]"] = 1
         payload = self.top_level.serializable(request=self.request)
-        self.assertEqual(
-            payload,
-            {
-                "jsonapi": {"version": "1.0"},
-                "meta": {
-                    "paginator": {
-                        "count": 3,
-                        "num_pages": 3
-                    }
-                },
-                "data": [
-                    {
-                        "type": "testitem",
-                        "id": str(self.item1.pk),
-                        "attributes": {
-                            "title": self.item1.title,
+        expected = {
+            "jsonapi": {"version": "1.0"},
+            "meta": {
+                "paginator": {
+                    "count": 3,
+                    "num_pages": 3
+                }
+            },
+            "data": [
+                {
+                    "type": "article",
+                    "id": str(self.item1.pk),
+                    "attributes": {
+                        "title": self.item1.title,
+                    },
+                    "relationships": {
+                        "tags": {
+                            "links": {
+                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item1.pk))
+                            },
+                            "data": []
+                        },
+                        "author": {
+                            "links": {
+                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item1.pk))
+                            },
+                            "data": {
+                                "type": "author",
+                                "id": str(self.author.pk)
+                            }
                         }
                     }
-                ]
-            }
+                }
+            ]
+        }
+        # verify items
+        self.assertResourceGraphEqual(
+            expected.pop("data"),
+            payload.pop("data")
         )
+        # Check that the remaining JSON is identical
+        self.assertEqual(expected, payload)
 
     def test_last_page(self):
         """
@@ -376,10 +658,27 @@ class TestPaginationPageNumber(TestCase):
                 },
                 "data": [
                     {
-                        "type": "testitem",
+                        "type": "article",
                         "id": str(self.item3.pk),
                         "attributes": {
                             "title": self.item3.title,
+                        },
+                        "relationships": {
+                            "tags": {
+                                "links": {
+                                    "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item3.pk))
+                                },
+                                "data": []
+                            },
+                            "author": {
+                                "links": {
+                                    "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item3.pk))
+                                },
+                                "data": {
+                                    "type": "author",
+                                    "id": str(self.author.pk)
+                                }
+                            }
                         }
                     }
                 ]
