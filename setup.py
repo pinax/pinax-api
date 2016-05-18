@@ -26,6 +26,7 @@ setup(
     test_suite="runtests.runtests",
     tests_require=[
         "django-appconf>=1.0.1",
+        "mock>=2.0.0",
     ],
     install_requires=[
     ],

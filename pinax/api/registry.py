@@ -17,7 +17,7 @@ def bind(parent=None, resource=None):
             viewset.url.parent = parent.url
         if resource is not None:
             BoundResource = type(
-                "Bound{}".format(resource.__class__.__name__),
+                str("Bound{}".format(resource.__class__.__name__)),
                 (resource,),
                 {"viewset": viewset},
             )
