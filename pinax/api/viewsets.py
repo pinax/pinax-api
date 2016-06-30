@@ -9,7 +9,6 @@ import traceback
 from django.conf import settings
 from django.conf.urls import url
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.db.models.base import ModelBase
 from django.http import HttpResponse, Http404
 from django.views.generic import View
 from django.views.decorators.csrf import csrf_exempt
