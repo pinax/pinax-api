@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import collections
 import datetime
 
 from collections import namedtuple
@@ -161,7 +162,16 @@ class Resource(object):
         return resolve_value(value)
 
     def get_relationship(self, related_name, rel):
-        return getattr(self.obj, related_name)
+        if rel.collection:
+            iterator = getattr(self.obj, related_name)
+            if not isinstance(iterator, collections.Iterable):
+                if not hasattr(iterator, "all"):
+                    raise TypeError("Relationship {} must be iterable or QuerySet".format(related_name))
+                else:
+                    iterator = iterator.all()
+            return iterator
+        else:
+            return getattr(self.obj, related_name)
 
     def set_attr(self, attr, value):
         if hasattr(self, attr.obj_attr):
@@ -226,9 +236,9 @@ class Resource(object):
                 rel_initial["links"] = rel_links
             rel_obj = relationships.setdefault(name, rel_initial)
             if rel.collection:
-                qs = self.get_relationship(name, rel).all()
+                iterable = self.get_relationship(name, rel)
                 rel_data = rel_obj.setdefault("data", [])
-                for v in qs:
+                for v in iterable:
                     rel_data.append(rel.resource_class()(v).identifier.as_dict())
             else:
                 v = self.get_relationship(name, rel)
@@ -275,13 +285,13 @@ def resolve_include(resource, path, included):
         raise SerializationError("'{}' is not a valid relationship to include".format(head))
     rel = resource.relationships[head]
     if rel.collection:
-        for obj in getattr(resource.obj, head).all():
+        for obj in resource.get_relationship(head, rel):
             r = rel.resource_class()(obj)
             if rest:
                 resolve_include(r, rest, included)
             included.add(r)
     else:
-        r = rel.resource_class()(getattr(resource.obj, head))
+        r = rel.resource_class()(resource.get_relationship(head, rel))
         included.add(r)
 
 
