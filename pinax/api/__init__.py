@@ -7,6 +7,7 @@ __version__ = pkg_resources.get_distribution("pinax-api").version
 
 from . import authentication, permissions  # noqa
 from .http import Response, Redirect  # noqa
+from .mixins import DjangoModelEndpointSetMixin  # noqa
 from .registry import register, bind, registry  # noqa
 from .relationships import Relationship  # noqa
 from .resource import Resource, Attribute  # noqa
