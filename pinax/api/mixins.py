@@ -1,4 +1,5 @@
 
+
 class DjangoModelEndpointSetMixin(object):
 
     def get_pk(self):
