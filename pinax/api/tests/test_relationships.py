@@ -8,6 +8,7 @@ from pinax import api
 
 from .models import (
     Article,
+    ArticleTag,
     Author,
 )
 
@@ -69,7 +70,7 @@ class ArticleTagsViewSetTestCase(api.TestCase):
                     }
                 }
             )
-            tags = self.article1.tags.values_list("name", flat=True)
+            tags = ArticleTag.objects.filter(article=self.article1).values_list("name", flat=True)
             self.assertIn(new_tag, tags)
             self.assertIn(another_new_tag, tags)
 
@@ -79,9 +80,9 @@ class ArticleTagsViewSetTestCase(api.TestCase):
         """
         # Create two tags for article1.
         first_tag = "Pinax"
-        self.article1.tags.create(name=first_tag)
+        ArticleTag.objects.create(name=first_tag, article=self.article1)
         second_tag = "Kel"
-        self.article1.tags.create(name=second_tag)
+        ArticleTag.objects.create(name=second_tag, article=self.article1)
 
         with mock.patch("pinax.api.authentication.Anonymous.authenticate", autospec=True) as mock_authenticate:
             mock_authenticate.return_value = AnonymousUser()
@@ -131,11 +132,11 @@ class ArticleTagsViewSetTestCase(api.TestCase):
         """
         # Create a tag which should remain.
         remain_tag = "Pinax"
-        self.article1.tags.create(name=remain_tag)
+        ArticleTag.objects.create(name=remain_tag, article=self.article1)
 
         # Create a tag for removal.
         remove_tag = "Kel"
-        self.article1.tags.create(name=remove_tag)
+        ArticleTag.objects.create(name=remove_tag, article=self.article1)
 
         post_data = {
             "data": [
@@ -159,7 +160,7 @@ class ArticleTagsViewSetTestCase(api.TestCase):
             self.assertEqual(response.status_code, 204)
             self.assertEqual(response["Content-Type"], "application/vnd.api+json")
 
-            article_tags = self.article1.tags.values_list("name", flat=True)
+            article_tags = ArticleTag.objects.filter(article=self.article1).values_list("name", flat=True)
             self.assertNotIn(remove_tag, article_tags)
             self.assertIn(remain_tag, article_tags)
 
@@ -169,9 +170,9 @@ class ArticleTagsViewSetTestCase(api.TestCase):
         """
         # Create a tag for each Article.
         first_tag = "Pinax"
-        self.article1.tags.create(name=first_tag)
+        ArticleTag.objects.create(name=first_tag, article=self.article1)
         second_tag = "Kel"
-        self.article2.tags.create(name=second_tag)
+        ArticleTag.objects.create(name=second_tag, article=self.article2)
 
         with mock.patch("pinax.api.authentication.Anonymous.authenticate", autospec=True) as mock_authenticate:
             mock_authenticate.return_value = AnonymousUser()
@@ -232,8 +233,10 @@ class ArticleTagsViewSetTestCase(api.TestCase):
         Ensure we can completely replace all Article tags.
         """
         # Create several tags which will get replaced.
-        self.article1.tags.create(name="Pinax")
-        self.article1.tags.create(name="Kel")
+        first_tag = "Pinax"
+        ArticleTag.objects.create(name=first_tag, article=self.article1)
+        second_tag = "Kel"
+        ArticleTag.objects.create(name=second_tag, article=self.article1)
 
         new_tag = "Futurama"
         another_new_tag = "Archer"
@@ -275,7 +278,7 @@ class ArticleTagsViewSetTestCase(api.TestCase):
                 }
             )
 
-            business_tags = self.article1.tags.values_list("name", flat=True)
+            business_tags = ArticleTag.objects.filter(article=self.article1).values_list("name", flat=True)
             self.assertSetEqual(set([new_tag, another_new_tag]), set(list(business_tags)))
 
     def test_get_article_matching_tag(self):
@@ -283,15 +286,15 @@ class ArticleTagsViewSetTestCase(api.TestCase):
         """
         # Create a separate tag for each Article
         first_tag = "Pinax"
-        self.article1.tags.create(name=first_tag)
+        ArticleTag.objects.create(name=first_tag, article=self.article1)
 
         second_tag = "Kel"
-        self.article2.tags.create(name=second_tag)
+        ArticleTag.objects.create(name=second_tag, article=self.article2)
 
         # Create a third tag used in both Articles.
         third_tag = "Club"
-        self.article1.tags.create(name=third_tag)
-        self.article2.tags.create(name=third_tag)
+        ArticleTag.objects.create(name=third_tag, article=self.article1)
+        ArticleTag.objects.create(name=third_tag, article=self.article2)
 
         with mock.patch("pinax.api.authentication.Anonymous.authenticate", autospec=True) as mock_authenticate:
             mock_authenticate.return_value = AnonymousUser()

@@ -62,7 +62,7 @@ class ArticleViewSet(api.ResourceEndpointSet):
         qs = self.get_queryset()
         tag_querystring = request.GET.get("tag", "")
         if tag_querystring:
-            qs = qs.filter(tags__name__in=[tag_querystring])
+            qs = qs.filter(articletag__name__in=[tag_querystring])
         return self.render(self.resource_class.from_queryset(qs))
 
     def retrieve(self, request, pk):
