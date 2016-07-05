@@ -1,7 +1,7 @@
 from pinax import api
 from pinax.api.exceptions import ErrorResponse
 
-from .models import Article
+from .models import Article, ArticleTag
 
 
 class ArticleTagCollectionEndpointSet(api.RelationshipEndpointSet):
@@ -35,7 +35,7 @@ class ArticleTagCollectionEndpointSet(api.RelationshipEndpointSet):
         with self.validate(self.resource_class, collection=True) as resources:
             tags = [resource.obj.name for resource in resources]
             for tag in tags:
-                self.article.tags.create(name=tag)
+                ArticleTag.objects.create(name=tag, article=self.article)
             return self.render(None)
 
     def update(self, request, pk):
@@ -44,16 +44,16 @@ class ArticleTagCollectionEndpointSet(api.RelationshipEndpointSet):
         """
         with self.validate(self.resource_class, collection=True) as resources:
             tags = [resource.obj.name for resource in resources]
-            self.article.tags.clear()
+            ArticleTag.objects.filter(article=self.article).delete()
             for tag in tags:
-                self.article.tags.create(name=tag)
+                ArticleTag.objects.create(name=tag, article=self.article)
             return self.render(None)
 
     def retrieve(self, request, pk):
         """
         Identifier: List tags for an Article
         """
-        tags = self.article.tags.all()
+        tags = ArticleTag.objects.filter(article=self.article)
         return self.render(self.resource_class.from_queryset(tags))
 
     def destroy(self, request, pk):
@@ -62,7 +62,7 @@ class ArticleTagCollectionEndpointSet(api.RelationshipEndpointSet):
         """
         with self.validate(self.resource_class, collection=True) as resources:
             tags = [resource.obj.name for resource in resources]
-            self.article.tags.filter(name__in=tags).delete()
+            ArticleTag.objects.filter(article=self.article, name__in=tags).delete()
             return self.render_delete()
 
 
