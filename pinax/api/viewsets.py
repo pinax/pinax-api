@@ -47,13 +47,13 @@ class EndpointSet(View):
     def dispatch(self, request, *args, **kwargs):
         try:
             if request.method.lower() in self.http_method_names:
-                handler = getattr(self, request.method.lower(), self.http_method_not_allowed)
+                endpoint = getattr(self, request.method.lower(), self.http_method_not_allowed)
             else:
-                handler = self.http_method_not_allowed
-            self.check_authentication(handler)
+                endpoint = self.http_method_not_allowed
+            self.check_authentication(endpoint)
             self.prepare()
-            self.check_permissions(handler)
-            response = handler(request, *args, **kwargs)
+            self.check_permissions(endpoint)
+            response = endpoint(request, *args, **kwargs)
             if not isinstance(response, HttpResponse):
                 raise ValueError("view did not return an HttpResponse (got: {})".format(type(response)))
         except Exception as exc:
@@ -82,10 +82,10 @@ class EndpointSet(View):
     def prepare(self):
         pass
 
-    def check_authentication(self, handler):
+    def check_authentication(self, endpoint):
         user = None
         backends = []
-        backends.extend(getattr(handler, "authentication", []))
+        backends.extend(getattr(endpoint, "authentication", []))
         backends.extend(getattr(self, "middleware", {}).get("authentication", []))
         for backend in backends:
             try:
@@ -99,9 +99,9 @@ class EndpointSet(View):
             if not self.request.user.is_authenticated():
                 raise ErrorResponse(**self.error_response_kwargs("Authentication Required.", status=401))
 
-    def check_permissions(self, handler):
+    def check_permissions(self, endpoint):
         perms = []
-        perms.extend(getattr(handler, "permissions", []))
+        perms.extend(getattr(endpoint, "permissions", []))
         perms.extend(getattr(self, "middleware", {}).get("permissions", []))
         for perm in perms:
             res = perm(self.request, view=self)
