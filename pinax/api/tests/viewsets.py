@@ -1,11 +1,7 @@
 
 from pinax import api
 
-from .models import (
-    Article,
-    ArticleTag,
-    Author,
-)
+from ..mixins import DjangoModelEndpointSetMixin
 from .relationships import (
     ArticleTagCollectionEndpointSet,
     ArticleAuthorEndpointSet,
@@ -18,7 +14,7 @@ from .resources import (
 
 
 @api.bind(resource=ArticleResource)
-class ArticleViewSet(api.ResourceEndpointSet):
+class ArticleViewSet(DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
     """
     Handle Article retrieval.
     """
@@ -40,16 +36,6 @@ class ArticleViewSet(api.ResourceEndpointSet):
         ]
     }
 
-    def get_queryset(self):
-        return Article.objects.all()
-
-    def prepare(self):
-        if self.requested_method in ["retrieve", "update", "destroy"]:
-            self.article = self.get_object_or_404(
-                self.get_queryset(),
-                pk=self.kwargs["pk"] if "pk" in self.kwargs else None,
-            )
-
     def create(self, request):
         with self.validate(self.resource_class) as resource:
             resource.save()
@@ -69,14 +55,14 @@ class ArticleViewSet(api.ResourceEndpointSet):
         """
         Identifier: Retrieve an Article
         """
-        resource = self.resource_class(obj=self.article)
+        resource = self.resource_class(obj=self.obj)
         return self.render(resource)
 
     def update(self, request, pk):
         """
         Update an Article
         """
-        with self.validate(self.resource_class(obj=self.article)) as resource:
+        with self.validate(self.resource_class(obj=self.obj)) as resource:
             resource.save()
             return self.render(resource)
 
@@ -84,11 +70,12 @@ class ArticleViewSet(api.ResourceEndpointSet):
         """
         Delete an Article
         """
-        return super(ArticleViewSet, self).destroy(request, pk)
+        self.obj.delete()
+        return self.render_delete()
 
 
 @api.bind(resource=ArticleTagResource)
-class ArticleTagViewSet(api.ResourceEndpointSet):
+class ArticleTagViewSet(DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
     """
     Handle ArticleTag retrieval.
     """
@@ -107,9 +94,6 @@ class ArticleTagViewSet(api.ResourceEndpointSet):
         ]
     }
 
-    def get_queryset(self):
-        return ArticleTag.objects.all()
-
     def list(self, request):
         """
         Identifier: List all tags
@@ -121,13 +105,12 @@ class ArticleTagViewSet(api.ResourceEndpointSet):
         """
         Identifier: Retrieve a tag
         """
-        articletag = self.get_object_or_404(self.get_queryset(), pk=pk)
-        resource = self.resource_class(articletag)
+        resource = self.resource_class(self.obj)
         return self.render(resource)
 
 
 @api.bind(resource=AuthorResource)
-class AuthorViewSet(api.ResourceEndpointSet):
+class AuthorViewSet(DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
     """
     Handle Author retrieval.
     """
@@ -146,9 +129,6 @@ class AuthorViewSet(api.ResourceEndpointSet):
         ]
     }
 
-    def get_queryset(self):
-        return Author.objects.all()
-
     def list(self, request):
         """
         Identifier: List all Authors
@@ -160,6 +140,5 @@ class AuthorViewSet(api.ResourceEndpointSet):
         """
         Identifier: Retrieve an Author
         """
-        author = self.get_object_or_404(self.get_queryset(), pk=pk)
-        resource = self.resource_class(author)
+        resource = self.resource_class(self.obj)
         return self.render(resource)
