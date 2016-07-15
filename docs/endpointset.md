@@ -224,7 +224,7 @@ Note that `EndpointSet.validate()` is a context manager, so you will always invo
 with self.validate(self.resource_class) as resource:
     # do something with the resource
     ...
-    
+
 # validate resource collection
 with self.validate(self.resource_class, collection=True) as resources:
     for resource in resources:
@@ -313,14 +313,16 @@ class PasswordResetEndpointSet(api.ResourceEndpointSet):
 If your resource serves data from Django models you can inherit from `api.mixins.DjangoModelEndpointSetMixin` to get automatic queryset and object retrieval. For instance, instead of:
 
 ```python
+from pinax import api
+
 class AuthorEndpointSet(api.ResourceEndpointSet):
     ...
-    
+
     def list(self, request):
         """List all Authors"""
         qs = Author.objects.all()
         return self.render(self.resource_class.from_queryset(qs))
-        
+
     def retrieve(self, request, pk):
         """Retrieve an Author"""
         qs = Author.objects.all()
@@ -331,13 +333,15 @@ class AuthorEndpointSet(api.ResourceEndpointSet):
 you can write:
 
 ```python
-class AuthorEndpointSet(DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
+from pinax import api
+
+class AuthorEndpointSet(api.mixins.DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
     ...
-    
+
     def list(self, request):
         """List all Authors"""
         return self.render(self.resource_class.from_queryset(self.get_queryset()))
-        
+
     def retrieve(self, request, pk):
         """Retrieve an Author"""
         return self.render(self.resource_class(self.obj))

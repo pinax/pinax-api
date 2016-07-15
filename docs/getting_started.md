@@ -57,11 +57,11 @@ This endpoint set allows listing all Author resources and retrieving a specific 
 ```python
 # endpoints.py
 
-from .models import Author
+from pinax import api
 from .resources import AuthorResource
 
 @api.bind(resource=AuthorResource)
-class AuthorEndpointSet(DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
+class AuthorEndpointSet(api.mixins.DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
     """
     Author resource endpoints
     """
@@ -77,7 +77,7 @@ class AuthorEndpointSet(DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
     def list(self, request):
         """List all Authors"""
         return self.render(self.resource_class.from_queryset(self.get_queryset()))
-        
+
     def retrieve(self, request, pk):
         """Retrieve an Author"""
         return self.render(self.resource_class(self.obj))
