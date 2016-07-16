@@ -15,7 +15,7 @@ setup(
     author_email="developers@pinaxproject.com",
     description="RESTful API adhering to the JSON API specification",
     name="pinax-api",
-    long_description=read("README.rst"),
+    long_description=read("README.md"),
     version="0.1.0",
     url="http://github.com/pinax/pinax-api/",
     license="MIT",
