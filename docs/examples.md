@@ -16,7 +16,7 @@ class AuthorEndpointSet(api.ResourceEndpointSet):
                 self.get_queryset(),
                 pk=self.pk
             )
-            
+
     def retrieve(self, request, pk):
         # No need to obtain correct queryset,
         # or find specified object in queryset,
@@ -29,7 +29,7 @@ In this example `.update()` and `.destroy()` also benefit from automatic object 
 
 ### Example: Using `api.DjangoModelEndpointSetMixin`
 
-If your resource obtains data from Django models you can inherit from `api.mixins.DjangoModelEndpointSetMixin` to get automatic queryset and object retrieval.
+If your resource obtains data from Django models you can inherit from `api.DjangoModelEndpointSetMixin` to get automatic queryset and object retrieval.
 
 ```python
 class AuthorEndpointSet(api.DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
@@ -39,7 +39,7 @@ class AuthorEndpointSet(api.DjangoModelEndpointSetMixin, api.ResourceEndpointSet
         return self.render(resource)
 ```
 
-In this example you don't need to override `.prepare()` because `DjangoModelEndpointSetMixin` handles that for you.
+In this example you don't need to override `.prepare()` because `DjangoModelEndpointSetMixin.prepare()` handles that for you.
 
 ### Example: Restricting Access to All Endpoints
 
@@ -95,7 +95,7 @@ class UserEndpointSet(api.ResourceEndpointSet):
     @api.permission.add([app.permissions.is_staff])
     def create(self, request):
         ...
-        
+
     def list(self, request):
         ...
 
@@ -121,7 +121,7 @@ class UserEndpointSet(api.ResourceEndpointSet):
 
     def create(self, request):
         ...
-        
+
     @api.authentication.add([api.authentication.Anonymous()])
     def list(self, request):
         ...
@@ -159,7 +159,7 @@ class PasswordResetResource(api.Resource):
         return self.obj[attr.obj_attr]
 
     # Token handling methods not shown for clarity
-    
+
     def set_token(self, token):
         self.obj["token"] = token
 

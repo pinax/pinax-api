@@ -310,7 +310,7 @@ class PasswordResetEndpointSet(api.ResourceEndpointSet):
 ```
 #### Using Django Models in Resources
 
-If your resource serves data from Django models you can inherit from `api.mixins.DjangoModelEndpointSetMixin` to get automatic queryset and object retrieval. For instance, instead of:
+If your resource serves data from Django models you can inherit from `api.DjangoModelEndpointSetMixin` to get automatic queryset and object retrieval. For instance, instead of:
 
 ```python
 from pinax import api
@@ -335,7 +335,7 @@ you can write:
 ```python
 from pinax import api
 
-class AuthorEndpointSet(api.mixins.DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
+class AuthorEndpointSet(api.DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
     ...
 
     def list(self, request):
