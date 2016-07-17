@@ -63,7 +63,7 @@ class Resource(object):
     api_type = ""
     attributes = []
     relationships = {}
-    bound_viewset = None
+    bound_endpointset = None
 
     @classmethod
     def from_queryset(cls, qs):
@@ -117,23 +117,23 @@ class Resource(object):
         return Identifier(type=self.api_type, id=str(self.id))
 
     def resolve_url_kwargs(self):
-        assert hasattr(self, "viewset"), "resolve_url_kwargs requires a bound resource (got {}).".format(self)
+        assert hasattr(self, "endpointset"), "resolve_url_kwargs requires a bound resource (got {}).".format(self)
         kwargs = {}
-        viewset = self.viewset
+        endpointset = self.endpointset
         child_obj = None  # moving object as we traverse the ancestors
-        while viewset is not None:
+        while endpointset is not None:
             if child_obj is None:
                 obj = self.obj
             else:
-                obj = getattr(child_obj, viewset.url.lookup["field"])
-            if viewset.url.lookup is not None:
-                kwargs[viewset.url.lookup["field"]] = viewset.resource_class(obj).id
-            viewset, child_obj = viewset.parent, obj
+                obj = getattr(child_obj, endpointset.url.lookup["field"])
+            if endpointset.url.lookup is not None:
+                kwargs[endpointset.url.lookup["field"]] = endpointset.resource_class(obj).id
+            endpointset, child_obj = endpointset.parent, obj
         return kwargs
 
     def get_self_link(self, request=None):
         kwargs = self.resolve_url_kwargs()
-        url = reverse("{}-detail".format(self.viewset.url.base_name), kwargs=kwargs)
+        url = reverse("{}-detail".format(self.endpointset.url.base_name), kwargs=kwargs)
         if request is not None and hasattr(request, "build_absolute_uri"):
             return request.build_absolute_uri(url)
         return url
@@ -143,7 +143,7 @@ class Resource(object):
         try:
             url = reverse(
                 "{}-{}-relationship-detail".format(
-                    self.viewset.url.base_name,
+                    self.endpointset.url.base_name,
                     related_name,
                 ),
                 kwargs=kwargs

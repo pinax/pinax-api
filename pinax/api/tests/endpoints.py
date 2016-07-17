@@ -1,7 +1,6 @@
 
 from pinax import api
 
-from ..mixins import DjangoModelEndpointSetMixin
 from .relationships import (
     ArticleTagCollectionEndpointSet,
     ArticleAuthorEndpointSet,
@@ -14,7 +13,7 @@ from .resources import (
 
 
 @api.bind(resource=ArticleResource)
-class ArticleViewSet(DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
+class ArticleEndpointSet(api.DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
     """
     Handle Article retrieval.
     """
@@ -75,7 +74,7 @@ class ArticleViewSet(DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
 
 
 @api.bind(resource=ArticleTagResource)
-class ArticleTagViewSet(DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
+class ArticleTagEndpointSet(api.DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
     """
     Handle ArticleTag retrieval.
     """
@@ -110,7 +109,7 @@ class ArticleTagViewSet(DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
 
 
 @api.bind(resource=AuthorResource)
-class AuthorViewSet(DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
+class AuthorEndpointSet(api.DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
     """
     Handle Author retrieval.
     """
