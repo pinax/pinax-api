@@ -116,27 +116,27 @@ Dive deeper and gain a better understanding of how pinax-api helps you out!
 
 ### Core Topics
 
-[Resources](resources.md)
-[Relationships](relationships.md)
-[EndpointSets](endpointset.md)
+* [Resources](resources.md)
+* [Relationships](relationships.md)
+* [EndpointSets](endpointset.md)
 
 ### Advanced Topics
 
-[Authentication](authentication.md)
-[Permissons](permissions.md)
-[API Documentation](api_documentation.md)
+* [Authentication](authentication.md)
+* [Permissons](permissions.md)
+* [API Documentation](api_documentation.md)
 
 
 ### References
 
-[URL Mapping](urlmapping.md)
-[Utilities](utilities.md)
-[Class Reference](classes.md)
+* [URL Mapping](urlmapping.md)
+* [Utilities](utilities.md)
+* [Class Reference](classes.md)
 
 ### Examples & Tutorials
 
-[Examples](examples.md)
-[Tutorials](tutorials.md)
+* [Examples](examples.md)
+* [Tutorials](tutorials.md)
 
 ***
 [Documentation Index](index.md)
