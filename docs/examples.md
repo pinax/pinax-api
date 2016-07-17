@@ -39,7 +39,7 @@ class AuthorEndpointSet(api.DjangoModelEndpointSetMixin, api.ResourceEndpointSet
         return self.render(resource)
 ```
 
-In this example you don't need to override `.prepare()` because `api.DjangoModelEndpointSetMixin` handles that for you.
+In this example you don't need to override `.prepare()` because `DjangoModelEndpointSetMixin.prepare()` handles that for you.
 
 ### Example: Restricting Access to All Endpoints
 
