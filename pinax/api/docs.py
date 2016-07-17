@@ -54,9 +54,9 @@ def format_url(url):
     return "".join(rurl2)
 
 
-def viewset_actions(viewset, **kwargs):
-    for method, attr in viewset.view_mapping(**kwargs).items():
-        view = getattr(viewset, attr, None)
+def endpointset_actions(endpointset, **kwargs):
+    for method, attr in endpointset.view_mapping(**kwargs).items():
+        view = getattr(endpointset, attr, None)
         if view is not None:
             doc = trim(view.__doc__).splitlines()
             if doc[0].startswith("Identifier: "):
@@ -72,29 +72,29 @@ class DocumentationGenerator:
     @classmethod
     def from_api(cls, api):
         resource_groups = []
-        for viewset in api:
-            resource_group = ResourceGroup(viewset.docs["verbose_name_plural"], viewset.__doc__)
+        for endpointset in api:
+            resource_group = ResourceGroup(endpointset.docs["verbose_name_plural"], endpointset.__doc__)
             # list resource
             resource = Resource(
-                name=viewset.docs["verbose_name_plural"],
-                url=format_url(viewset.url.collection_regex()),
+                name=endpointset.docs["verbose_name_plural"],
+                url=format_url(endpointset.url.collection_regex()),
             )
-            resource.actions.extend(list(viewset_actions(viewset, collection=True)))
+            resource.actions.extend(list(endpointset_actions(endpointset, collection=True)))
             resource_group.resources.append(resource)
             # detail resource
             resource = Resource(
-                name=viewset.docs["verbose_name"],
-                url=format_url(viewset.url.detail_regex()),
+                name=endpointset.docs["verbose_name"],
+                url=format_url(endpointset.url.detail_regex()),
             )
-            resource.actions.extend(list(viewset_actions(viewset, collection=False)))
+            resource.actions.extend(list(endpointset_actions(endpointset, collection=False)))
             resource_group.resources.append(resource)
             # relationship resources
-            for related_name, rel_viewset in viewset.relationships.items():
+            for related_name, rel_endpointset in endpointset.relationships.items():
                 resource = Resource(
-                    name=viewset.docs["verbose_name_plural"],
-                    url=format_url("{}/relationships/{}".format(viewset.url.detail_regex(), related_name)),
+                    name=endpointset.docs["verbose_name_plural"],
+                    url=format_url("{}/relationships/{}".format(endpointset.url.detail_regex(), related_name)),
                 )
-                resource.actions.extend(list(viewset_actions(rel_viewset)))
+                resource.actions.extend(list(endpointset_actions(rel_endpointset)))
                 resource_group.resources.append(resource)
             # wrap up
             resource_groups.append(resource_group)
