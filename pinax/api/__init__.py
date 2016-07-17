@@ -14,4 +14,4 @@ from .resource import Resource, Attribute  # noqa
 from .tests.test import TestCase  # noqa
 from .urls import URL as url  # noqa
 from .views import handler404  # noqa
-from .viewsets import ResourceEndpointSet, RelationshipEndpointSet  # noqa
+from .endpoints import ResourceEndpointSet, RelationshipEndpointSet  # noqa

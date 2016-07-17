@@ -11,19 +11,19 @@ def register(cls):
 
 
 def bind(parent=None, resource=None):
-    def wrapper(viewset):
+    def wrapper(endpointset):
         if parent is not None:
-            viewset.parent = parent
-            viewset.url.parent = parent.url
+            endpointset.parent = parent
+            endpointset.url.parent = parent.url
         if resource is not None:
             BoundResource = type(
                 str("Bound{}".format(resource.__class__.__name__)),
                 (resource,),
-                {"viewset": viewset},
+                {"endpointset": endpointset},
             )
-            viewset.resource_class = BoundResource
+            endpointset.resource_class = BoundResource
             # override registry with bound resource (typically what we want)
             registry[resource.api_type] = BoundResource
-        viewset.relationships = getattr(viewset, "relationships", {})
-        return viewset
+        endpointset.relationships = getattr(endpointset, "relationships", {})
+        return endpointset
     return wrapper

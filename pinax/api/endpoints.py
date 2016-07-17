@@ -250,8 +250,8 @@ class ResourceEndpointSet(EndpointSet):
                 name="{}-detail".format(cls.url.base_name)
             )
         ]
-        for related_name, eps in cls.relationships.items():
-            urls.extend(eps.as_urls(cls.url, related_name))
+        for related_name, endpointset in cls.relationships.items():
+            urls.extend(endpointset.as_urls(cls.url, related_name))
         return urls
 
 
