@@ -52,7 +52,7 @@ class AuthorResource(api.Resource):
 
 #### 2. Create Your Resource Endpoints
 
-This endpoint set allows listing all Author resources and retrieving a specific Author. Since our resource originates from a Django model, your EndpointSet class can inherit from `api.utils.DjangoModelEndpointSetMixin`.
+This endpoint set allows listing all Author resources and retrieving a specific Author. Since our resource originates from a Django model, your EndpointSet class can inherit from `api.DjangoModelEndpointSetMixin`.
 
 ```python
 # endpoints.py
@@ -61,7 +61,7 @@ from pinax import api
 from .resources import AuthorResource
 
 @api.bind(resource=AuthorResource)
-class AuthorEndpointSet(api.mixins.DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
+class AuthorEndpointSet(api.DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
     """
     Author resource endpoints
     """
