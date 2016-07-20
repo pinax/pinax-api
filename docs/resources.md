@@ -41,9 +41,9 @@ Any `api.Resource` object MAY have one or more of the following properties:
 
 ### Resource Attributes
 
-Resource `.attributes` define the resource data to expose for retrieval and accepted for update. Attributes may refer to Django model fields or resource properties.
+Resource attributes define the resource data to expose for retrieval and accepted for update. Attributes may refer to Django model fields or resource properties.
 
-All resource attributes define single-object attributes. Integer fields, char fields, and boolean fields are examples of singleton attributes.
+All resource attributes define single-object attributes. Integer fields, char fields, and boolean fields are examples of singleton attributes. Attributes may be more complex than these types as long as they are single objects.
 
 Although ForeignKey relationships are single-object, the JSON:API spec [explicitly states](http://jsonapi.org/format/#document-resource-object-attributes)
 
