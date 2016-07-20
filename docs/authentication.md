@@ -4,15 +4,15 @@
 
 `api.EndpointSet` checks authentication at three levels of granularity in the following order, from most specific to most general:
 
-1. Endpoint authentication - This authentication applies to only the specified endpoint. Activated via endpoint `authentication` attribute.
-2. Class authentication - This authentication applies to the entire EndpointSet class. Activated via class `middleware["authentication"]` attribute.
-3. Django authentication - This authentication applies to the entire application. Straight from the pony's mouth using `self.request.user.is_authenticated` and the standard Django AUTHENTICATION_BACKENDS. 
+1. Endpoint authentication — This authentication applies to only the specified endpoint. Activated via endpoint `authentication` attribute.
+2. Class authentication — This authentication applies to the entire EndpointSet class. Activated via class `middleware["authentication"]` attribute.
+3. Django authentication — This authentication applies to the entire application. Straight from the pony's mouth using `self.request.user.is_authenticated` and the standard Django AUTHENTICATION_BACKENDS.
 
 If authentication fails or succeeds at any level, more general authentication checks are not processed.
 
 ### Writing An Authenticator Class
 
-`api.EndpointSet` authenticators are Python classes with an "authenticate" method. This method must accept one required parameter, a Request object. The "authenticate()" method should respond by either raising `AuthenticationFailed` or returning a user object (if authentication succeeded) or None (if authentication cannot be determined).
+`api.EndpointSet` authenticators are Python classes with an `.authenticate()` method. `.authenticate()` must accept a `Request` parameter and respond by either raising `AuthenticationFailed` or returning a user object (if authentication succeeded) or None (if authentication cannot be determined).
 
 NOTE: Do not confuse Django authentication backends (referenced in settings.py AUTHENTICATION_BACKENDS) with pinax-api authentication backends. Django authentication backends allow overriding `get_user()`, while pinax-api authentication backends have no such method.
 

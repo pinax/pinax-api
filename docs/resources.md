@@ -6,15 +6,15 @@ Resources are fundamental objects in pinax-api. Resources may represent Django m
 
 #### Required properties
 
-Every `api.Resource` object MUST have three properties: 
+Every `api.Resource` object MUST have three properties:
 
-- `api_type` - string identifying the resource type. Must be unique among all Resources in a project.
-
-
-- `model` -  object type, typically a Django class name, i.e. `Author`.
+- `api_type` — string identifying the resource type. Must be unique among all Resources in a project.
 
 
-- `id` - any valid PK type, this is typically the PK of the underlying Django model instance
+- `model` —  object type, typically a Django class name, i.e. `Author`.
+
+
+- `id` — any valid PK type, this is typically the PK of the underlying Django model instance
 
 For instance:
 
@@ -24,7 +24,7 @@ from pinax import api
 class AuthorResource(api.Resource):
     api_type = "author"
     model = Author
- 
+
     @property
     def id(self):
         return self.obj.pk
@@ -36,14 +36,14 @@ class AuthorResource(api.Resource):
 
 Any `api.Resource` object MAY have one or more of the following properties:
 
-- `attributes` - an [attributes object](http://jsonapi.org/format/#document-resource-object-attributes) representing some of the resource’s data.
-- `relationships` - a [relationships object](http://jsonapi.org/format/#document-resource-object-relationships) describing relationships between the resource and other JSON API resources. See the [Relationships topic guide](relationships.md) for more details.
+- `attributes` — an [attributes object](http://jsonapi.org/format/#document-resource-object-attributes) representing some of the resource’s data.
+- `relationships` — a [relationships object](http://jsonapi.org/format/#document-resource-object-relationships) describing relationships between the resource and other JSON API resources. See the [Relationships topic guide](relationships.md) for more details.
 
 ### Resource Attributes
 
-Resource "attributes" define what resource data to expose for retrieval and accepted for update. Attributes may refer to Django model fields or resource properties.
+Resource `.attributes` define the resource data to expose for retrieval and accepted for update. Attributes may refer to Django model fields or resource properties.
 
-All resource "attributes" define single-object attributes. Integer fields, char fields, and boolean fields are examples of singleton attributes.
+All resource attributes define single-object attributes. Integer fields, char fields, and boolean fields are examples of singleton attributes.
 
 Although ForeignKey relationships are single-object, the JSON:API spec [explicitly states](http://jsonapi.org/format/#document-resource-object-attributes)
 
@@ -100,11 +100,11 @@ class AuthorResource(api.Resource):
         "name",
         "age",  # poor resource design, allows both read and write
     ]
-    
+
     @property
     def age(self):
         return datetime.date.today() // self.obj.birthdate
-        
+
     ...
 ```
 
@@ -121,11 +121,11 @@ class AuthorResource(api.Resource):
         "name",
         api.Attribute("age", scope="r"),  # only read, no write
     ]
-    
+
     @property
     def age(self):
         return datetime.date.today() // self.obj.birthdate
-        
+
     ...
 ```
 
@@ -175,7 +175,7 @@ class Author(models.Model):
         return self.name
 ```
 
-A resource may want a different attribute name for external consumption. In this case the resource exposes "notes", derived from `Author.extra`:
+A resource may want a different attribute name for external consumption. In this case the resource exposes `notes`, derived from `Author.extra`:
 
 ```python
 class AuthorResource(api.Resource):
@@ -232,7 +232,7 @@ First, note `AddressResource` has no `api_type` attribute and no `model` attribu
 
 ### Other Resource Properties
 
-* `obj` - a resource's underlying object instance
+* `obj` — a resource's underlying object instance
 
 An `api.Resource` instance always contains a pointer to the underlying object instance in `self.obj`. In the examples above, resource properties reference `self.obj.pk` and `self.obj.birthdate`. These references to `self.obj` act on the `Author` instance attached to the resource instance.
 

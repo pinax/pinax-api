@@ -4,8 +4,8 @@
 
 pinax-api checks permissions at two levels of granularity, in the following order:
 
-1. Endpoint permissions - These permissions checks apply to only the specified endpoint. Activated via endpoint `permissions` attribute. 
-2. Class permissions - These permissions checks apply to the entire EndpointSet-based class. Activated via class `middleware["permissions"]` attribute. 
+1. Endpoint permissions — These permissions checks apply to only the specified endpoint. Activated via endpoint `permissions` attribute.
+2. Class permissions — These permissions checks apply to the entire EndpointSet-based class. Activated via class `middleware["permissions"]` attribute.
 
 If permissions checking fails or succeeds at any level, more general permission checking is not processed.
 
@@ -19,9 +19,9 @@ def my_perm_checker(request, endpointset):
     return ok, status, msg
 ```
 
-* ok - "user has permission", either True or False
-* status - HTTP status code integer - only used if permissions check fails
-* msg - error message string - only used if permissions check fails
+* ok — "user has permission", either True or False
+* status — HTTP status code integer, only used if permissions check fails
+* msg — error message string, only used if permissions check fails
 
 Here is a simple permissions check function:
 
