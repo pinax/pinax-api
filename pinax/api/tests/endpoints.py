@@ -61,7 +61,7 @@ class ArticleEndpointSet(api.DjangoModelEndpointSetMixin, api.ResourceEndpointSe
         """
         Update an Article
         """
-        with self.validate(self.resource_class(obj=self.obj)) as resource:
+        with self.validate(self.resource_class, obj=self.obj) as resource:
             resource.save()
             return self.render(resource)
 
