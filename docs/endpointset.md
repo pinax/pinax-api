@@ -43,7 +43,7 @@ class AuthorEndpointSet(api.ResourceEndpointSet):
     )
 ```
 
-Endpoints reference Author resources by a "pk" attribute, specified in `url.lookup["field"]`. The PK in this case is an integer primary key, specified by the `url.lookup["regex"]` regular expression.
+Endpoints reference Author resources by a `pk` attribute, specified in `url.lookup["field"]`. The PK in this case is an integer primary key, specified by the `url.lookup["regex"]` regular expression.
 
 This example results in two automatic URL paths for accessing endpoints:
 
@@ -60,17 +60,17 @@ Most JSON:API endpoints return an HttpResponse containing some form of JSON-seri
 >
 > - `links`: a [links object](http://jsonapi.org/format/#document-links) containing links related to the resource.
 
-and pinax-api always includes these links. However, `api.Resource` classes by themselves don't know anything about endpoints and URL paths. In order to provide this "self" URL link resolution, you must connect the Resource class with the ResourceEndpointSet class using `api.bind()`.
+and pinax-api always includes these links. However, `api.Resource` classes by themselves don't know anything about endpoints and URL paths. In order to provide self-reference endpoint link resolution, you must connect the Resource class with the ResourceEndpointSet class using `api.bind()`.
 
 **Bind Resource classes to EndpointSets to provide URL resolution for resource rendering.**
 
-pinax-api uses a "bound" ResourceEndpointSet to determine the URL patterns for a resource `self` link. Unbound resource classes do not contain any URL patterns and therefore cannot be rendered.
+pinax-api uses a “bound” ResourceEndpointSet to determine the URL patterns for a resource endpoint link. Unbound resource classes do not contain any URL patterns and therefore cannot be rendered.
 
 Binding a ResourceEndpointSet with a Resource class has three results:
 
-1. creates a new "bound" resource class which associates the original Resource class with the ResourceEndpointSet class
-2. adds a `resource_class` attribute to the ResourceEndpointSet, pointing to the new "bound" resource class
-3. registers the new "bound" resource class in the api registry
+1. creates a new “bound” resource class which associates the original Resource class with the ResourceEndpointSet class
+2. adds a `resource_class` attribute to the ResourceEndpointSet, pointing to the new “bound” resource class
+3. registers the new “bound” resource class in the api registry
 
 Bind a Resource class to a ResourceEndpointSet by decorating with `api.bind()`:
 
@@ -93,7 +93,7 @@ Your EndpointSet does not need to implement all possible endpoints, just the end
 
 ###### SHOW RESOURCE
 
-* `.list()` - show collection of resources
+* `.list()` — show collection of resources
 
   Use `.resource_class.from_queryset()` to render a collection of resources:
 
@@ -121,7 +121,7 @@ Your EndpointSet does not need to implement all possible endpoints, just the end
   ```
 
 
-* `.retrieve()` - show single resource
+* `.retrieve()` — show single resource
 
   Show a retrieved object:
 
@@ -133,7 +133,7 @@ Your EndpointSet does not need to implement all possible endpoints, just the end
 
 ###### CREATE / MODIFY RESOURCE
 
-* `.create()` - create new resource
+* `.create()` — create new resource
 
   Requires validation of user-provided data, automatically handled by `.validate()`. Use `.render_create()` for rendering a new resource:
 
@@ -145,7 +145,7 @@ Your EndpointSet does not need to implement all possible endpoints, just the end
   ```
 
 
-* `.update()` - update resource
+* `.update()` — update resource
 
   Requires validation of user-provided data, automatically handled by `.validate()`:
 
@@ -160,7 +160,7 @@ Your EndpointSet does not need to implement all possible endpoints, just the end
 
 ###### DESTROY RESOURCE
 
-* `.destroy()` - delete resource
+* `.destroy()` — delete resource
 
   Delete a retrieved object:
 
@@ -213,7 +213,7 @@ class AuthorResource(api.Resource):
     }
 ```
 
-validation would ignore the "email" and "phone" fields and only update the "name" attribute.
+validation would ignore the `email` and `phone` fields and only update the `name` attribute.
 
 ###### ContextManager
 
@@ -238,15 +238,15 @@ Resource rendering produces a JSON:API-compliant representation of resources, su
 
 > The response **MUST** also include a document that contains the primary resource...
 
-Rendering is usually the last task an endpoint performs. pinax-api provides three rendering methods for "success" responses:
+Rendering is usually the last task an endpoint performs. pinax-api provides three rendering methods for “success” responses:
 
-* `.render()` - return an HttpResponse with rendered resource instance (or collection of instances) based on existing, newly created, or updated data
-* `.render_create()` - return an HttpResponse with JSON:API-compliant payload for a newly created resource
-* `.render_delete()` - return an HttpResponse with no payload and 204 status_code
+* `.render()` — return an HttpResponse with rendered resource instance (or collection of instances) based on existing, newly created, or updated data
+* `.render_create()` — return an HttpResponse with JSON:API-compliant payload for a newly created resource
+* `.render_delete()` — return an HttpResponse with no payload and 204 status_code
 
-Standard endpoints instantiate a resource instance using `.resource_class()`, never by referencing the resource class directly. `.resource_class()` takes advantage of Resource - ResourceEndpointSet binding (see "Step Three: Bind ResourceEndpointSet To Resource Class" above) to determine the resource class.
+Standard endpoints instantiate a resource instance using `.resource_class()`, never by referencing the resource class directly. `.resource_class()` takes advantage of Resource–ResourceEndpointSet binding (see “Step Three: Bind ResourceEndpointSet To Resource Class” above) to determine the resource class.
 
-- `.resource_class()` - return the bound `api.Resource`-based resource class
+- `.resource_class()` — return the “bound” `api.Resource`-based resource class
 
 This is correct:
 
@@ -284,13 +284,13 @@ pinax-api will complain during `self.render()`:
 "AssertionError: resolve_url_kwargs requires a bound resource (got <myapp.resources.UserResource object at 0x10cf77d30>)."
 ```
 
-Resource rendering fails in this case because the Resource instance is not associated with an ResourceEndpointSet and therefore the resource "self" link required by JSON:API cannot be generated. Remember: **always render "bound" resources**.
+Resource rendering fails in this case because the Resource instance is not associated with an ResourceEndpointSet and therefore the resource endpoint reference link required by JSON:API cannot be generated. Remember: **always render “bound” resources**.
 
 ##### Returning Errors
 
 When your endpoint detects a problem, invoke `.render_error()`. If a `status` kwarg is not provided, `.render_error()` sets the response status_code to 400.
 
-- `.render_error(status=400)` - return an HttpResponse with error message and status code
+- `.render_error(status=400)` — return an HttpResponse with error message and status code
 
 ```python
 from pinax import api
@@ -349,10 +349,10 @@ class AuthorEndpointSet(api.DjangoModelEndpointSetMixin, api.ResourceEndpointSet
 
 `DjangoModelEndpointSetMixin` provides three new methods and overrides a fourth:
 
-* `.get_pk()` - return the PK value for the Django model object
-* `.get_resource_object_model()` - return the resource class underlying model
-* `.get_queryset()` - return QuerySet of all resource class underlying model instances
-* `.prepare()` - sets `self.pk` and `self.obj` if HTTP request method acts on single objects. Raises 404 if object is not found in queryset using specified PK.
+* `.get_pk()` — return the PK value for the Django model object
+* `.get_resource_object_model()` — return the resource class underlying model
+* `.get_queryset()` — return QuerySet of all resource class underlying model instances
+* `.prepare()` — sets `self.pk` and `self.obj` if HTTP request method acts on single objects. Raises 404 if object is not found in queryset using specified PK.
 
 ##### Resource Proxying
 

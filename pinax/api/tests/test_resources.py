@@ -1,5 +1,6 @@
 import json
-import mock
+from datetime import date, datetime
+from mock import NonCallableMock, patch, sentinel
 
 from django.contrib.auth.models import AnonymousUser
 from django.core.urlresolvers import reverse
@@ -20,7 +21,7 @@ class ArticleViewSetTestCase(api.TestCase):
         """
         collection_url = reverse("article-list")
 
-        with mock.patch("pinax.api.authentication.Anonymous.authenticate", autospec=True) as mock_authenticate:
+        with patch("pinax.api.authentication.Anonymous.authenticate", autospec=True) as mock_authenticate:
             mock_authenticate.return_value = AnonymousUser()
             response = self.client.get(collection_url)
             payload = json.loads(response.content.decode("utf-8"))
@@ -57,7 +58,7 @@ class ArticleViewSetTestCase(api.TestCase):
             kwargs=dict(pk=article.pk)
         )
 
-        with mock.patch("pinax.api.authentication.Anonymous.authenticate", autospec=True) as mock_authenticate:
+        with patch("pinax.api.authentication.Anonymous.authenticate", autospec=True) as mock_authenticate:
             mock_authenticate.return_value = AnonymousUser()
             response = self.client.get(collection_url)
             payload = json.loads(response.content.decode("utf-8"))
@@ -126,7 +127,7 @@ class ArticleViewSetTestCase(api.TestCase):
             kwargs=dict(pk=article.pk)
         )
 
-        with mock.patch("pinax.api.authentication.Anonymous.authenticate", autospec=True) as mock_authenticate:
+        with patch("pinax.api.authentication.Anonymous.authenticate", autospec=True) as mock_authenticate:
             mock_authenticate.return_value = AnonymousUser()
             response = self.client.get(detail_url)
             payload = json.loads(response.content.decode("utf-8"))
@@ -184,7 +185,7 @@ class ArticleViewSetTestCase(api.TestCase):
                 }
             }
         }
-        with mock.patch("pinax.api.authentication.Anonymous.authenticate", autospec=True) as mock_authenticate:
+        with patch("pinax.api.authentication.Anonymous.authenticate", autospec=True) as mock_authenticate:
             mock_authenticate.return_value = AnonymousUser()
             collection_url = reverse("article-list")
             response = self.client.post(
@@ -235,3 +236,26 @@ class ArticleViewSetTestCase(api.TestCase):
                 }
             }
             self.assertEqual(expected, payload)
+
+
+class ResolveValueTestCase(api.TestCase):
+
+    def test_should_call_callables(self):
+        result = api.resource.resolve_value(lambda: sentinel.callable_result)
+        self.assertEqual(result, sentinel.callable_result)
+
+    def test_should_coerce_datetime(self):
+        datetime_ = datetime.now()
+        result = api.resource.resolve_value(datetime_)
+        self.assertEqual(result, api.rfc3339.encode(datetime_))
+
+    def test_should_coerce_date(self):
+        date_ = date.today()
+        result = api.resource.resolve_value(date_)
+        self.assertEqual(result, date.isoformat(date_))
+
+    def test_should_return_as_json(self):
+        with_as_json = NonCallableMock()
+        with_as_json.as_json.return_value = sentinel.as_json
+        result = api.resource.resolve_value(with_as_json)
+        self.assertEqual(result, sentinel.as_json)

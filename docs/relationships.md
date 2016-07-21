@@ -29,13 +29,13 @@ class AuthorResource(api.Resource):
     }
 ```
 
-This resource relates an Author to a collection of "authortag" resources, as well as a single "agent" resource. At the model level, this relationship might look like this:
+This resource relates an Author to a collection of `authortag` resources, as well as a single `agent` resource. At the model level, this relationship might look like this:
 
 ```python
 class Author(models.Model):
     name = models.CharField(max_length=100)
     agent = models.ForeignKey(Agent, null=True)
-    
+
 class AuthorTag(models.Model):
     label = models.CharField(max_length=50)
     author = models.ForeignKey(Author)
@@ -108,7 +108,7 @@ class AuthorEndpointSet(api.ResourceEndpointSet):
     }
 ```
 
-If a Resource HAS defined relationships and a ResourceEndpointSet DOES NOT, URL linkage for the related resource will not be generated. This does not violate the JSON:API [specification](http://jsonapi.org/format/#document-resource-objects) which states "relationships" are optional:
+If a Resource HAS defined relationships and a ResourceEndpointSet DOES NOT, URL linkage for the related resource will not be generated. This does not violate the JSON:API [specification](http://jsonapi.org/format/#document-resource-objects) which states `relationships` are optional:
 
 >In addition, a resource object **MAY** contain any of these top-level members:
 >
@@ -138,14 +138,14 @@ class AuthorTagCollectionEndpointSet(api.RelationshipEndpointSet):
 
 ##### Step Two: Create Relationship Endpoints
 
-Resource relationship retrieval and manipulation is performed by RelationshipEndpointSet methods, called "endpoints". These methods have specific names based on automatic HTTP method to URL mapping. See [URL Mapping](urlmapping.md) for more details.
+Resource relationship retrieval and manipulation is performed by RelationshipEndpointSet methods, called “endpoints”. These methods have specific names based on automatic HTTP method to URL mapping. See [URL Mapping](urlmapping.md) for more details.
 
 #### Supported Endpoints
 
-- `.retrieve()` - retrieve relationship members
-- `.create()` - add members to relationship (**does not** imply related-object creation)
-- `.update()` - replace relationship members (**does not** imply related-object update)
-- `.destroy()` - delete relationship members
+- `.retrieve()` — retrieve relationship members
+- `.create()` — add members to relationship (**does not** imply related-object creation)
+- `.update()` — replace relationship members (**does not** imply related-object update)
+- `.destroy()` — delete relationship members
 
 None of these methods should create or update resources, they should just change the relationship members for the resource. According to JSON:API [specification](http://jsonapi.org/format/#crud-updating-relationships) the only exception to this policy is `.destroy()`:
 
@@ -157,7 +157,7 @@ You may choose not to implement relationship endpoints even when relationships e
 
 If a relationship is correctly defined in the Resource and in the ResourceEndpointSet, the retrieved resource will contain URL links to the related resource. However, related resource requests will fail because no relationship endpoints exist.
 
-In our AuthorEndpointSet above, "tags" refers to `AuthorTagCollectionEndpointSet`. If you don't want relationship endpoints, simply define an empty RelationshipEndpointSet class:
+In our AuthorEndpointSet above, `tags` refers to `AuthorTagCollectionEndpointSet`. If you don't want relationship endpoints, simply define an empty RelationshipEndpointSet class:
 
 ```python
 from pinax import api

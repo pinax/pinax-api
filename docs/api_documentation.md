@@ -9,7 +9,7 @@ API documentation can be automatically created from EndpointSet method docstring
 ```python
 class AuthorEndpointSet(DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
     ...
-    
+
     def retrieve(self, request, pk):
         """
         Identifier: Retrieve an author
@@ -54,7 +54,7 @@ class AuthorEndpointSet(DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
                         "jsonapi": {"version": "1.0"},
                         "errors": [
                             {
-                                "detail": 'Author not found',
+                                "detail": "Author not found",
                                 "status": "404"
                             }
                         ]
@@ -77,7 +77,7 @@ class AuthorEndpointSet(DjangoModelEndpointSetMixin, api.ResourceEndpointSet):
 
 ### 2. Wire Up API Documentation
 
-pinax-api creates URL patterns for you automatically via the `doc_view()` utility. Serve automatic documentation at "/docs" by following this example:
+pinax-api creates URL patterns for you automatically via the `doc_view()` utility. Serve automatic documentation at `/docs` by following this example:
 
 ```python
 # urls.py
