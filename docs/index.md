@@ -21,17 +21,17 @@
 
 ## Topic Guides
 
-[Resources](resources.md) - Exposing information
+[Resources](resources.md) — Exposing information
 
-[Relationships](relationships.md) - Connections between resources
+[Relationships](relationships.md) — Connections between resources
 
-[Endpoints](endpointset.md) - Creating and manipulating resources
+[Endpoints](endpointset.md) — Creating and manipulating resources
 
-[Authentication](authentication.md) - Is this user valid?
+[Authentication](authentication.md) — Is this user valid?
 
-[Permissions](permissions.md) - Is this user allowed access?
+[Permissions](permissions.md) — Is this user allowed access?
 
-[Automatic Documentation](api_documentation.md) - API documentation for developers
+[Automatic Documentation](api_documentation.md) — API documentation for developers
 
 ## References
 

@@ -15,7 +15,7 @@ Relationships connect resources to other resources. Relationships are similar to
 
 #### Endpoints
 
-Applications serve resources and relationships from methods (referred to as "endpoints") in an `api.EndpointSet`-based class. Each endpoint handles either creating, updating, retrieving, or deleting resources.
+Applications serve resources and relationships from methods (referred to as “endpoints”) in an `api.EndpointSet`-based class. Each endpoint handles either creating, updating, retrieving, or deleting resources.
 
 pinax-api provides two `EndpointSet`-based classes: `ResourceEndpointSet` and `RelationshipEndpointSet`. A ResourceEndpointSet manipulates resources, while a RelationshipEndpointSet manipulates resources related to another resource. See the [Endpoints topic guide](endpointset.md) for more details.
 
@@ -25,9 +25,9 @@ pinax-api manages authentication and permissions for `api.EndpointSet`-based cla
 
 When processing an HTTP request, pinax-api performs authentication and permissions checks in the following order:
 
-1. Authenticate User - is user authenticated?
-2. Prepare Data - obtain resource data, available for permissions check
-3. Check Permissions - does user have permission to access/manipulate this resource?
+1. Authenticate User — is user authenticated?
+2. Prepare Data — obtain resource data, available for permissions check
+3. Check Permissions — does user have permission to access/manipulate this resource?
 4. Invoke Endpoint
 
 If authentication, preparation, or permissions checks encounter an error, they raise an exception and the endpoint is not invoked.

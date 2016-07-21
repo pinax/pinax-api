@@ -2,7 +2,7 @@
 
 ### Install `pinax-api`
 
-Add "pinax-api" to your project `requirements.txt` file or install pinax-api manually:
+Add `pinax-api` to your project `requirements.txt` file or install pinax-api manually:
 
 ```
 $ pip install pinax-api

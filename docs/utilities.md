@@ -4,7 +4,7 @@
 
 #### `.doc_view(api)`
 
-A simple Django view which returns API documentation in "text/vnd.apiblueprint" format, assembled from EndpointSet docstrings.
+A simple Django view which returns API documentation in `text/vnd.apiblueprint` format, assembled from EndpointSet docstrings.
 
 To add an API documentation endpoint, define a class with all API endpointsets, then add `doc_view(cls)` to urlpatterns:
 
