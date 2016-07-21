@@ -299,7 +299,9 @@ def resolve_value(value):
     if callable(value):
         value = resolve_value(value())
     if isinstance(value, datetime.datetime):
-        return rfc3339.encode(value)
+        value = rfc3339.encode(value)
+    if isinstance(value, datetime.date):
+        value = datetime.date.isoformat(value)
     if hasattr(value, "as_json"):
         value = value.as_json()
     return value
