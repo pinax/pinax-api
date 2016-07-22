@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import date, datetime
 from unittest.mock import NonCallableMock, patch, sentinel
 
 from django.contrib.auth.models import AnonymousUser
@@ -250,9 +250,13 @@ class ResolveValueTestCase(api.TestCase):
         result = api.resource.resolve_value(datetime_)
         self.assertEqual(result, api.rfc3339.encode(datetime_))
 
+    def test_should_coerce_date(self):
+        date_ = date.today()
+        result = api.resource.resolve_value(date_)
+        self.assertEqual(result, date.isoformat(date_))
+
     def test_should_return_as_json(self):
         with_as_json = NonCallableMock()
         with_as_json.as_json.return_value = sentinel.as_json
         result = api.resource.resolve_value(with_as_json)
         self.assertEqual(result, sentinel.as_json)
-
