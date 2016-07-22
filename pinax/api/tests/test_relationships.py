@@ -1,5 +1,5 @@
 import json
-import mock
+from unittest import mock
 
 from django.contrib.auth.models import AnonymousUser
 from django.core.urlresolvers import reverse

@@ -1,5 +1,5 @@
 import json
-import mock
+from unittest import mock
 
 from django.contrib.auth.models import AnonymousUser
 from django.core.urlresolvers import reverse
@@ -235,3 +235,11 @@ class ArticleViewSetTestCase(api.TestCase):
                 }
             }
             self.assertEqual(expected, payload)
+
+
+class ResolveValueTestCase(api.TestCase):
+
+    def test_should_call_callable(self):
+        callable_ = mock.Mock()
+        resolve_value(callable_)
+        callable_.assert_called_once_with()
