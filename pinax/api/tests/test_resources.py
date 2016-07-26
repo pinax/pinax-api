@@ -237,6 +237,74 @@ class ArticleViewSetTestCase(api.TestCase):
             }
             self.assertEqual(expected, payload)
 
+    def test_update_article(self):
+        """
+        Ensure correct `detail` response for an Article.
+        """
+        author = Author.objects.create(name="First Author")
+        article = Article.objects.create(title="Test Article", author=author)
+
+        detail_url = reverse("article-detail", kwargs=dict(pk=article.pk))
+        patch_data = {
+            "data": {
+                "type": "article",
+                "attributes": {
+                    "title": "First Article (updated)"
+                }
+            }
+        }
+
+        with patch("pinax.api.authentication.Anonymous.authenticate", autospec=True) as mock_authenticate:
+            mock_authenticate.return_value = AnonymousUser()
+            response = self.client.patch(
+                detail_url,
+                data=json.dumps(patch_data),
+                content_type="application/vnd.api+json"
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response["Content-Type"], "application/vnd.api+json")
+
+            article = Article.objects.get()
+            # Article1 Relationship URLs
+            article_tags_url = reverse("article-tags-relationship-detail", kwargs=dict(pk=article.pk))
+            article_author_url = reverse("article-author-relationship-detail", kwargs=dict(pk=article.pk))
+
+            payload = json.loads(response.content.decode("utf-8"))
+            expected = {
+                "jsonapi": {"version": "1.0"},
+                "data": {
+                    "type": "article",
+                    "id": str(article.pk),
+                    "links": {
+                        "self": "http://testserver{}".format(reverse("article-detail", kwargs=dict(pk=article.pk)))
+                    },
+                    "attributes": {
+                        "title": article.title,
+                    },
+                    "relationships": {
+                        "tags": {
+                            "data": [],
+                            "links": {
+                                "self": "http://testserver{}".format(article_tags_url)
+                            }
+                        },
+                        "author": {
+                            "data": {
+                                "type": "author",
+                                "id": str(author.pk)
+                            },
+                            "links": {
+                                "self": "http://testserver{}".format(article_author_url)
+                            }
+                        }
+                    }
+                },
+                "links": {
+                    "self": "http://testserver{}".format(detail_url)
+                }
+            }
+            self.assertDictEqual(expected, payload)
+
 
 class ResolveValueTestCase(api.TestCase):
 
@@ -259,3 +327,31 @@ class ResolveValueTestCase(api.TestCase):
         with_as_json.as_json.return_value = sentinel.as_json
         result = api.resource.resolve_value(with_as_json)
         self.assertEqual(result, sentinel.as_json)
+
+
+class IdentifierTestCase(api.TestCase):
+
+    def setUp(self):
+        self.identifier = api.resource.Identifier(
+            type=sentinel.api_type,
+            id=sentinel.id
+        )
+
+    def test_getitem_should_use_type(self):
+        self.assertEqual(self.identifier['type'], sentinel.api_type)
+
+    def test_getitem_should_use_id(self):
+        self.assertEqual(self.identifier['id'], sentinel.id)
+
+
+class ResourceTestCase(api.TestCase):
+
+    def setUp(self):
+        self.resource = api.resource.Resource()
+        self.resource.id = sentinel.id
+
+    def test_should_hash_on_identifier(self):
+        self.assertEqual(hash(self.resource), hash(self.resource.identifier))
+
+    def test_should_allow_comparison(self):
+        self.assertTrue(self.resource == self.resource)
