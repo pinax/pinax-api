@@ -227,13 +227,14 @@ class Resource(object):
             attributes[attr.name] = self.get_attr(attr)
         relationships = {}
         for name, rel in self.relationships.items():
-            rel_links = {}
-            rel_self_link = self.get_self_relationship_link(name, request=request)
-            if rel_self_link:
-                rel_links["self"] = rel_self_link
             rel_initial = {}
-            if rel_links:
-                rel_initial["links"] = rel_links
+            if links:
+                rel_links = {}
+                rel_self_link = self.get_self_relationship_link(name, request=request)
+                if rel_self_link:
+                    rel_links["self"] = rel_self_link
+                if rel_links:
+                    rel_initial["links"] = rel_links
             rel_obj = relationships.setdefault(name, rel_initial)
             if rel.collection:
                 iterable = self.get_relationship(name, rel)
