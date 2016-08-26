@@ -19,6 +19,9 @@ class Article(models.Model):
 
 
 class ArticleTag(models.Model):
+
+    custom_pk = models.AutoField(primary_key=True)
+
     article = models.ForeignKey(Article)
     name = models.CharField(max_length=50)
 

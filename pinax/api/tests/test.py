@@ -3,6 +3,8 @@ from django.test import TestCase as BaseTestCase
 
 class TestCase(BaseTestCase):
 
+    maxDiff = None
+
     def assertResourceGraphEqual(self, a, b):
         """
         Compare two lists of JSON:API resources.

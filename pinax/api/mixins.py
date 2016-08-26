@@ -32,7 +32,10 @@ class DjangoModelEndpointSetMixin(object):
         Assumes Resource object is based on Django model.
         No action is taken if requested method does not operate on single objects.
         """
-        if self.get_resource_object_model():
+        resource_model = self.get_resource_object_model()
+        if resource_model:
             if self.requested_method in ["retrieve", "update", "destroy"]:
                 self.pk = self.get_pk()
-                self.obj = self.get_object_or_404(self.get_queryset(), pk=self.pk)
+                # Use the model primary key field name
+                kwargs = {resource_model._meta.pk.name: self.pk}
+                self.obj = self.get_object_or_404(self.get_queryset(), **kwargs)

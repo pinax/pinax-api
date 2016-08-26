@@ -61,7 +61,6 @@ class TestPagination(TestCase):
             "linkage": False
         }
         top_level = TopLevel(**data)
-        article_tags_url = reverse("article-tags-relationship-detail", kwargs=dict(pk=item1.pk))
         expected = {
             "jsonapi": {"version": "1.0"},
             "meta": {
@@ -79,15 +78,9 @@ class TestPagination(TestCase):
                     },
                     "relationships": {
                         "tags": {
-                            "links": {
-                                "self": "{}".format(article_tags_url)
-                            },
                             "data": []
                         },
                         "author": {
-                            "links": {
-                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=item1.pk))
-                            },
                             "data": {
                                 "type": "author",
                                 "id": str(author.pk)
@@ -138,15 +131,9 @@ class TestPagination(TestCase):
                     },
                     "relationships": {
                         "tags": {
-                            "links": {
-                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=item1.pk))
-                            },
                             "data": []
                         },
                         "author": {
-                            "links": {
-                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=item1.pk))
-                            },
                             "data": {
                                 "type": "author",
                                 "id": str(author.pk)
@@ -162,15 +149,9 @@ class TestPagination(TestCase):
                     },
                     "relationships": {
                         "tags": {
-                            "links": {
-                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=item2.pk))
-                            },
                             "data": []
                         },
                         "author": {
-                            "links": {
-                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=item2.pk))
-                            },
                             "data": {
                                 "type": "author",
                                 "id": str(author.pk)
@@ -186,15 +167,9 @@ class TestPagination(TestCase):
                     },
                     "relationships": {
                         "tags": {
-                            "links": {
-                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=item3.pk))
-                            },
                             "data": []
                         },
                         "author": {
-                            "links": {
-                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=item3.pk))
-                            },
                             "data": {
                                 "type": "author",
                                 "id": str(author.pk)
@@ -257,15 +232,9 @@ class TestPaginationPageSize(TestCase):
                     },
                     "relationships": {
                         "tags": {
-                            "links": {
-                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item1.pk))
-                            },
                             "data": []
                         },
                         "author": {
-                            "links": {
-                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item1.pk))
-                            },
                             "data": {
                                 "type": "author",
                                 "id": str(self.author.pk)
@@ -281,15 +250,9 @@ class TestPaginationPageSize(TestCase):
                     },
                     "relationships": {
                         "tags": {
-                            "links": {
-                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item2.pk))
-                            },
                             "data": []
                         },
                         "author": {
-                            "links": {
-                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item2.pk))
-                            },
                             "data": {
                                 "type": "author",
                                 "id": str(self.author.pk)
@@ -305,15 +268,9 @@ class TestPaginationPageSize(TestCase):
                     },
                     "relationships": {
                         "tags": {
-                            "links": {
-                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item3.pk))
-                            },
                             "data": []
                         },
                         "author": {
-                            "links": {
-                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item3.pk))
-                            },
                             "data": {
                                 "type": "author",
                                 "id": str(self.author.pk)
@@ -323,7 +280,6 @@ class TestPaginationPageSize(TestCase):
                 }
             ]
         }
-        payload = self.top_level.serializable(request=self.request)
 
         self.assertResourceGraphEqual(
             expected.pop("data"),
@@ -356,15 +312,9 @@ class TestPaginationPageSize(TestCase):
                     },
                     "relationships": {
                         "tags": {
-                            "links": {
-                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item1.pk))
-                            },
                             "data": []
                         },
                         "author": {
-                            "links": {
-                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item1.pk))
-                            },
                             "data": {
                                 "type": "author",
                                 "id": str(self.author.pk)
@@ -410,15 +360,9 @@ class TestPaginationPageSize(TestCase):
                         },
                         "relationships": {
                             "tags": {
-                                "links": {
-                                    "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item1.pk))
-                                },
                                 "data": []
                             },
                             "author": {
-                                "links": {
-                                    "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item1.pk))
-                                },
                                 "data": {
                                     "type": "author",
                                     "id": str(self.author.pk)
@@ -434,15 +378,9 @@ class TestPaginationPageSize(TestCase):
                         },
                         "relationships": {
                             "tags": {
-                                "links": {
-                                    "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item2.pk))
-                                },
                                 "data": []
                             },
                             "author": {
-                                "links": {
-                                    "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item2.pk))
-                                },
                                 "data": {
                                     "type": "author",
                                     "id": str(self.author.pk)
@@ -479,15 +417,9 @@ class TestPaginationPageSize(TestCase):
                         },
                         "relationships": {
                             "tags": {
-                                "links": {
-                                    "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item1.pk))
-                                },
                                 "data": []
                             },
                             "author": {
-                                "links": {
-                                    "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item1.pk))
-                                },
                                 "data": {
                                     "type": "author",
                                     "id": str(self.author.pk)
@@ -503,15 +435,9 @@ class TestPaginationPageSize(TestCase):
                         },
                         "relationships": {
                             "tags": {
-                                "links": {
-                                    "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item2.pk))
-                                },
                                 "data": []
                             },
                             "author": {
-                                "links": {
-                                    "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item2.pk))
-                                },
                                 "data": {
                                     "type": "author",
                                     "id": str(self.author.pk)
@@ -527,15 +453,9 @@ class TestPaginationPageSize(TestCase):
                         },
                         "relationships": {
                             "tags": {
-                                "links": {
-                                    "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item3.pk))
-                                },
                                 "data": []
                             },
                             "author": {
-                                "links": {
-                                    "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item3.pk))
-                                },
                                 "data": {
                                     "type": "author",
                                     "id": str(self.author.pk)
@@ -613,15 +533,9 @@ class TestPaginationPageNumber(TestCase):
                     },
                     "relationships": {
                         "tags": {
-                            "links": {
-                                "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item1.pk))
-                            },
                             "data": []
                         },
                         "author": {
-                            "links": {
-                                "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item1.pk))
-                            },
                             "data": {
                                 "type": "author",
                                 "id": str(self.author.pk)
@@ -665,15 +579,9 @@ class TestPaginationPageNumber(TestCase):
                         },
                         "relationships": {
                             "tags": {
-                                "links": {
-                                    "self": reverse("article-tags-relationship-detail", kwargs=dict(pk=self.item3.pk))
-                                },
                                 "data": []
                             },
                             "author": {
-                                "links": {
-                                    "self": reverse("article-author-relationship-detail", kwargs=dict(pk=self.item3.pk))
-                                },
                                 "data": {
                                     "type": "author",
                                     "id": str(self.author.pk)
