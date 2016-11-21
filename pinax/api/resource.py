@@ -162,8 +162,9 @@ class Resource(object):
         return resolve_value(value)
 
     def get_relationship(self, related_name, rel):
+        attr = rel.attr if rel.attr is not None else related_name
         if rel.collection:
-            iterator = getattr(self.obj, related_name)
+            iterator = getattr(self.obj, attr)
             if not isinstance(iterator, collections.Iterable):
                 if not hasattr(iterator, "all"):
                     raise TypeError("Relationship {} must be iterable or QuerySet".format(related_name))
@@ -171,7 +172,7 @@ class Resource(object):
                     iterator = iterator.all()
             return iterator
         else:
-            return getattr(self.obj, related_name)
+            return getattr(self.obj, attr)
 
     def set_attr(self, attr, value):
         if hasattr(self, attr.obj_attr):
@@ -191,7 +192,7 @@ class Resource(object):
                         related_name, value["data"]["id"]
                     )
                 })
-            setattr(self.obj, related_name, o)
+            setattr(self.obj, f.name, o)
         else:
             # A collection can be:
             #  * ManyToManyField
