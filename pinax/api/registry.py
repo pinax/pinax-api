@@ -7,11 +7,10 @@ bound_registry = {}
 
 def register(cls):
     registry[cls.api_type] = cls
-
-    def as_jsonapi(self):
-        return cls(self).serialize()
-
-    cls.model.as_jsonapi = as_jsonapi
+    if not isinstance(cls.model, dict):
+        def as_jsonapi(self):
+            return cls(self).serialize()
+        cls.model.as_jsonapi = as_jsonapi
     return cls
 
 
